@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Cliente {
+  id         Int         @id @default(autoincrement())
+  nome       String
+  endereco   String?
+  telefone   String
+  createdAt  DateTime    @default(now())
+  orcamentos Orcamento[]
+}
+
+// Preços de perfis, vidros e acessórios usados no cálculo do orçamento
+model Material {
+  id               Int     @id @default(autoincrement())
+  nome             String
+  categoria        String // PERFIL, VIDRO, ACESSORIO
+  unidade          String // BARRA, M2, PECA, ROLO
+  comprimentoBarra Float? // metros, usado quando categoria = PERFIL
+  precoUnitario    Float
+  ativo            Boolean @default(true)
+}
+
+// Modelo de esquadria (ex: Janela de Correr 2 Folhas) com a fórmula de cálculo associada
+model TipoEsquadria {
+  id          Int             @id @default(autoincrement())
+  nome        String
+  categoria   String // JANELA_CORRER, PORTA_CORRER, PORTA_GIRO, FIXO, VITRO_BASCULANTE
+  numFolhas   Int
+  formulaKey  String // referencia a fórmula de cálculo no motor (lib/calculo.ts)
+  parametros  String          @default("{}") // JSON com descontos/quantidades ajustáveis (rodízios por folha, desconto de vidro, etc.)
+  descricao   String?
+  ativo       Boolean         @default(true)
+  itens       ItemOrcamento[]
+}
+
+model Orcamento {
+  id             Int             @id @default(autoincrement())
+  numero         Int             @unique
+  clienteId      Int
+  cliente        Cliente         @relation(fields: [clienteId], references: [id])
+  maoDeObra      Float           @default(0)
+  descontoValor  Float           @default(0)
+  descontoMotivo String?
+  observacoes    String?
+  status         String          @default("RASCUNHO") // RASCUNHO, ENVIADO, APROVADO, RECUSADO
+  subtotal       Float           @default(0)
+  total          Float           @default(0)
+  createdAt      DateTime        @default(now())
+  itens          ItemOrcamento[]
+}
+
+model ItemOrcamento {
+  id                  Int           @id @default(autoincrement())
+  orcamentoId         Int
+  orcamento           Orcamento     @relation(fields: [orcamentoId], references: [id], onDelete: Cascade)
+  tipoEsquadriaId     Int
+  tipoEsquadria       TipoEsquadria @relation(fields: [tipoEsquadriaId], references: [id])
+  descricao           String?
+  largura             Float // cm
+  altura              Float // cm
+  quantidade          Int           @default(1)
+  corPerfil           String        @default("Branco")
+  tipoVidro           String        @default("Temperado Incolor")
+  precoM2Vidro        Float
+  usarSobraEstoqueId  Int?
+  calculoJson         String // detalhamento: barras, rodizios, fitas, acessorios, vidro, sobras geradas
+  valorItem           Float
+}
+
+// Retalhos/sobras de perfil e vidro reaproveitáveis em orçamentos futuros
+model EstoqueSobra {
+  id                Int      @id @default(autoincrement())
+  tipo              String // PERFIL ou VIDRO
+  descricaoMaterial String
+  medida1           Float // comprimento (perfil, cm) ou largura (vidro, cm)
+  medida2           Float? // altura (vidro, cm) - null para perfil
+  quantidade        Int      @default(1)
+  origemOrcamentoId Int?
+  disponivel        Boolean  @default(true)
+  createdAt         DateTime @default(now())
+}
