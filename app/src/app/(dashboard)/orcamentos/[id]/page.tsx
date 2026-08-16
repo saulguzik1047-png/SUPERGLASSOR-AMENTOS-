@@ -21,7 +21,7 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4">
+      <div className="glass-card p-4">
         <OrcamentoAcoes
           orcamentoId={orcamento.id}
           numero={orcamento.numero}
@@ -48,7 +48,7 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
         />
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+      <div className="glass-card p-4 overflow-x-auto">
         <h2 className="font-semibold mb-3">Itens</h2>
         <table className="w-full text-sm">
           <thead>
@@ -83,7 +83,7 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
         </table>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4 flex flex-col items-end gap-1">
+      <div className="glass-card p-4 flex flex-col items-end gap-1">
         <div className="text-sm text-slate-500">Mão de obra: R$ {orcamento.maoDeObra.toFixed(2)}</div>
         <div className="text-sm text-slate-500">Subtotal: R$ {orcamento.subtotal.toFixed(2)}</div>
         {orcamento.descontoValor > 0 && (

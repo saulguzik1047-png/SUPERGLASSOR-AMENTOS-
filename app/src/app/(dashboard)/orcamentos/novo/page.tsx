@@ -28,7 +28,7 @@ export default async function NovoOrcamentoPage() {
 
   if (clientes.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow p-6 text-center">
+      <div className="glass-card p-6 text-center">
         <p className="mb-3">Cadastre um cliente antes de criar o primeiro orçamento.</p>
         <Link href="/clientes" className="text-blue-600 font-semibold hover:underline">Ir para Clientes</Link>
       </div>

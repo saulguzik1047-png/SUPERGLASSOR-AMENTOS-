@@ -27,12 +27,12 @@ export default async function OrcamentosPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Orçamentos arquivados</h1>
-        <Link href="/orcamentos/novo" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg">
+        <Link href="/orcamentos/novo" className="ios-btn ios-btn-primary">
           + Novo Orçamento
         </Link>
       </div>
 
-      <div className="bg-white rounded-xl shadow divide-y">
+      <div className="glass-card divide-y divide-white/40">
         {orcamentos.length === 0 && <p className="p-4 text-slate-500 text-sm">Nenhum orçamento cadastrado ainda.</p>}
         {orcamentos.map((o) => (
           <Link key={o.id} href={`/orcamentos/${o.id}`} className="p-4 flex items-center justify-between gap-4 flex-wrap hover:bg-slate-50">
@@ -41,7 +41,7 @@ export default async function OrcamentosPage() {
               <div className="text-xs text-slate-500">{o.itens.length} item(ns) · {new Date(o.createdAt).toLocaleDateString("pt-BR")}</div>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[o.status]}`}>{statusLabel[o.status]}</span>
+              <span className={`ios-pill ${statusColor[o.status]}`}>{statusLabel[o.status]}</span>
               <span className="font-semibold">R$ {o.total.toFixed(2)}</span>
             </div>
           </Link>

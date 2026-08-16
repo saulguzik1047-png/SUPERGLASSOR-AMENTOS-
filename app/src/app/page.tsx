@@ -1,66 +1,51 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
+const botoes = [
+  { href: "/orcamentos/novo", label: "Novo Orçamento", icone: "📝", destaque: true },
+  { href: "/orcamentos", label: "Orçamentos", icone: "🗂️" },
+  { href: "/clientes", label: "Clientes", icone: "👤" },
+  { href: "/estoque", label: "Estoque de Sobras", icone: "♻️" },
+  { href: "/materiais", label: "Materiais e Preços", icone: "💲" },
+];
 
-export default async function Home() {
-  const [totalClientes, totalOrcamentos, orcamentosAbertos, sobrasDisponiveis] = await Promise.all([
-    prisma.cliente.count(),
-    prisma.orcamento.count(),
-    prisma.orcamento.count({ where: { status: { in: ["RASCUNHO", "ENVIADO"] } } }),
-    prisma.estoqueSobra.count({ where: { disponivel: true } }),
-  ]);
-
-  const ultimosOrcamentos = await prisma.orcamento.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 5,
-    include: { cliente: true },
-  });
-
-  const cards = [
-    { label: "Clientes cadastrados", valor: totalClientes, href: "/clientes" },
-    { label: "Orçamentos no total", valor: totalOrcamentos, href: "/orcamentos" },
-    { label: "Em aberto (rascunho/enviado)", valor: orcamentosAbertos, href: "/orcamentos" },
-    { label: "Sobras em estoque", valor: sobrasDisponiveis, href: "/estoque" },
-  ];
-
+export default function Home() {
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Painel</h1>
-          <p className="text-slate-600">Orçamentos de esquadrias de alumínio e vidro temperado</p>
+    <div className="h-dvh flex flex-col items-center justify-between gap-4 px-5 py-8 overflow-hidden">
+      <div className="flex flex-col items-center gap-1 pt-2">
+        <div className="flex items-center gap-2 text-4xl font-black tracking-tight">
+          <span className="text-slate-900">SUL</span>
+          <span className="bg-gradient-to-br from-blue-500 to-sky-300 bg-clip-text text-transparent">GLASS</span>
         </div>
-        <Link href="/orcamentos/novo" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow">
-          + Novo Orçamento
+        <p className="text-slate-500 text-sm font-medium">Esquadrias de alumínio &amp; vidro temperado</p>
+      </div>
+
+      <div className="w-full max-w-sm flex-1 flex flex-col gap-3 justify-center">
+        <Link
+          href={botoes[0].href}
+          className="glass-card flex items-center gap-4 px-5 py-5 text-lg font-bold text-white"
+          style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(56,189,248,0.85))" }}
+        >
+          <span className="text-3xl">{botoes[0].icone}</span>
+          {botoes[0].label}
         </Link>
-      </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {cards.map((c) => (
-          <Link key={c.label} href={c.href} className="bg-white rounded-xl shadow p-4 hover:shadow-md transition-shadow">
-            <div className="text-3xl font-bold text-slate-900">{c.valor}</div>
-            <div className="text-sm text-slate-500 mt-1">{c.label}</div>
-          </Link>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-xl shadow p-4">
-        <h2 className="font-semibold text-lg mb-3">Últimos orçamentos</h2>
-        {ultimosOrcamentos.length === 0 && <p className="text-slate-500 text-sm">Nenhum orçamento criado ainda.</p>}
-        <div className="flex flex-col divide-y">
-          {ultimosOrcamentos.map((o) => (
-            <Link key={o.id} href={`/orcamentos/${o.id}`} className="py-2 flex items-center justify-between hover:bg-slate-50 px-2 rounded">
-              <div>
-                <div className="font-medium">Orçamento #{o.numero} — {o.cliente.nome}</div>
-                <div className="text-xs text-slate-500">{o.status}</div>
-              </div>
-              <div className="font-semibold">R$ {o.total.toFixed(2)}</div>
+        <div className="grid grid-cols-2 gap-3 flex-1">
+          {botoes.slice(1).map((b) => (
+            <Link
+              key={b.href}
+              href={b.href}
+              className="glass-card flex flex-col items-center justify-center gap-2 p-4 text-center font-semibold text-slate-800 active:scale-95 transition-transform"
+            >
+              <span className="text-3xl">{b.icone}</span>
+              <span className="text-sm leading-tight">{b.label}</span>
             </Link>
           ))}
         </div>
       </div>
+
+      <p className="text-xs text-slate-400">SULGLASS © {new Date().getFullYear()}</p>
     </div>
   );
 }
+
 

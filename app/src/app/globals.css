@@ -10,6 +10,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-sketch: var(--font-sketch);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +24,119 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
 }
+
+html.app-bg body {
+  background: radial-gradient(1200px 600px at 10% -10%, #dbeafe 0%, transparent 60%),
+    radial-gradient(1000px 500px at 100% 0%, #ede9fe 0%, transparent 55%),
+    linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+  background-attachment: fixed;
+}
+
+/* Estilo "iOS" com efeito de vidro fosco flutuante */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.1), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+}
+
+.ios-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.65rem 1.4rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12), 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+.ios-btn:active {
+  transform: scale(0.96);
+}
+.ios-btn:disabled {
+  opacity: 0.5;
+  transform: none;
+}
+
+.ios-btn-primary {
+  background: rgba(37, 99, 235, 0.9);
+  color: white;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35), 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+}
+.ios-btn-primary:hover {
+  background: rgba(29, 78, 216, 0.95);
+}
+
+.ios-btn-secondary {
+  background: rgba(255, 255, 255, 0.55);
+  color: #1e293b;
+}
+.ios-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.ios-btn-dark {
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+}
+.ios-btn-dark:hover {
+  background: rgba(15, 23, 42, 1);
+}
+
+.ios-btn-success {
+  background: rgba(22, 163, 74, 0.9);
+  color: white;
+  box-shadow: 0 6px 18px rgba(22, 163, 74, 0.35), 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+}
+.ios-btn-success:hover {
+  background: rgba(21, 128, 61, 0.95);
+}
+
+.ios-btn-danger {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+  box-shadow: none;
+  border: none;
+}
+.ios-btn-danger:hover {
+  background: rgba(220, 38, 38, 0.2);
+}
+
+.ios-btn-danger-solid {
+  background: rgba(220, 38, 38, 0.92);
+  color: white;
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4), 0 1px 0 rgba(255, 255, 255, 0.35) inset;
+}
+.ios-btn-danger-solid:hover {
+  background: rgba(185, 28, 28, 0.95);
+}
+
+.ios-pill {
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.ios-input {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 0.85rem;
+  padding: 0.6rem 0.9rem;
+}
+.ios-input:focus {
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+

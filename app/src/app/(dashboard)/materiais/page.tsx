@@ -30,7 +30,7 @@ export default async function MateriaisPage() {
       </p>
 
       {grupos.map((g) => (
-        <div key={g.categoria} className="bg-white rounded-xl shadow p-4">
+        <div key={g.categoria} className="glass-card p-4">
           <h2 className="font-semibold mb-3">{categoriaLabel[g.categoria]}</h2>
           <div className="flex flex-col divide-y">
             {g.itens.length === 0 && <p className="text-slate-500 text-sm py-2">Nenhum material cadastrado.</p>}
@@ -50,15 +50,15 @@ export default async function MateriaisPage() {
                     m
                   </label>
                 )}
-                <button className="bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-1.5 text-sm font-semibold">Salvar</button>
-                <button formAction={desativar} className="text-red-600 hover:underline text-xs">Remover</button>
+                <button className="ios-btn ios-btn-primary !py-1.5 !px-4 text-xs">Salvar</button>
+                <button formAction={desativar} className="ios-btn ios-btn-danger !py-1.5 !px-3 text-xs">Remover</button>
               </form>
             ))}
           </div>
         </div>
       ))}
 
-      <div className="bg-white rounded-xl shadow p-4">
+      <div className="glass-card p-4">
         <h2 className="font-semibold mb-3">Adicionar novo material</h2>
         <form action={criarMaterial} className="grid gap-3 md:grid-cols-5">
           <input name="nome" placeholder="Nome do material" required className="border rounded px-3 py-2 md:col-span-2" />
@@ -75,7 +75,7 @@ export default async function MateriaisPage() {
           </select>
           <input name="precoUnitario" type="number" step="0.01" min={0} placeholder="Preço (R$)" required className="border rounded px-3 py-2" />
           <input name="comprimentoBarra" type="number" step="0.1" min={0.1} placeholder="Comprimento da barra (m) — só perfil" className="border rounded px-3 py-2 md:col-span-2" />
-          <button className="bg-slate-800 hover:bg-slate-900 text-white rounded px-4 py-2 font-semibold w-fit">Adicionar</button>
+          <button className="ios-btn ios-btn-dark w-fit">Adicionar</button>
         </form>
       </div>
     </div>

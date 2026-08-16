@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { calcularOrcamentoItem, type PrecosMateriais, type ResultadoCalculo } from "@/lib/calculo";
 import { criarOrcamento } from "@/lib/actions";
+import EsquadriaSketch from "./EsquadriaSketch";
 
 interface Cliente { id: number; nome: string; telefone: string }
 interface TipoEsquadria { id: number; nome: string; categoria: string; numFolhas: number; parametros: string }
@@ -137,10 +138,10 @@ export default function NovoOrcamentoForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="bg-white rounded-xl shadow p-4 grid gap-3 md:grid-cols-3">
+      <div className="glass-card p-4 grid gap-3 md:grid-cols-3">
         <label className="flex flex-col gap-1 text-sm">
           Cliente
-          <select value={clienteId} onChange={(e) => setClienteId(Number(e.target.value))} className="border rounded px-3 py-2">
+          <select value={clienteId} onChange={(e) => setClienteId(Number(e.target.value))} className="ios-input">
             {clientes.length === 0 && <option value="">Cadastre um cliente primeiro</option>}
             {clientes.map((c) => (
               <option key={c.id} value={c.id}>{c.nome} — {c.telefone}</option>
@@ -149,20 +150,27 @@ export default function NovoOrcamentoForm({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Mão de obra (R$)
-          <input type="number" min={0} step="0.01" value={maoDeObra} onChange={(e) => setMaoDeObra(Number(e.target.value))} className="border rounded px-3 py-2" />
+          <input type="number" min={0} step="0.01" value={maoDeObra} onChange={(e) => setMaoDeObra(Number(e.target.value))} className="ios-input" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Observações
-          <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} className="border rounded px-3 py-2" placeholder="Prazo, condições de pagamento..." />
+          <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} className="ios-input" placeholder="Prazo, condições de pagamento..." />
         </label>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4">
+      <div className="glass-card p-4">
         <h2 className="font-semibold mb-3">Adicionar item</h2>
-        <div className="grid gap-3 md:grid-cols-6">
-          <label className="flex flex-col gap-1 text-sm md:col-span-2">
+        <div className="grid gap-4 md:grid-cols-[1.1fr_1.4fr]">
+          <EsquadriaSketch
+            categoria={tipos.find((t) => t.id === tipoEsquadriaId)?.categoria ?? "JANELA_CORRER"}
+            numFolhas={tipos.find((t) => t.id === tipoEsquadriaId)?.numFolhas ?? 2}
+            larguraCm={larguraCm}
+            alturaCm={alturaCm}
+          />
+          <div className="grid gap-3 md:grid-cols-3">
+          <label className="flex flex-col gap-1 text-sm md:col-span-3">
             Tipo de esquadria
-            <select value={tipoEsquadriaId} onChange={(e) => setTipoEsquadriaId(Number(e.target.value))} className="border rounded px-3 py-2">
+            <select value={tipoEsquadriaId} onChange={(e) => setTipoEsquadriaId(Number(e.target.value))} className="ios-input">
               {tipos.map((t) => (
                 <option key={t.id} value={t.id}>{t.nome}</option>
               ))}
@@ -170,23 +178,23 @@ export default function NovoOrcamentoForm({
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Largura (cm)
-            <input type="number" min={1} value={larguraCm} onChange={(e) => setLarguraCm(Number(e.target.value))} className="border rounded px-3 py-2" />
+            <input type="number" min={1} value={larguraCm} onChange={(e) => setLarguraCm(Number(e.target.value))} className="ios-input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Altura (cm)
-            <input type="number" min={1} value={alturaCm} onChange={(e) => setAlturaCm(Number(e.target.value))} className="border rounded px-3 py-2" />
+            <input type="number" min={1} value={alturaCm} onChange={(e) => setAlturaCm(Number(e.target.value))} className="ios-input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Quantidade
-            <input type="number" min={1} value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} className="border rounded px-3 py-2" />
+            <input type="number" min={1} value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} className="ios-input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Cor do perfil
-            <input value={corPerfil} onChange={(e) => setCorPerfil(e.target.value)} className="border rounded px-3 py-2" />
+            <input value={corPerfil} onChange={(e) => setCorPerfil(e.target.value)} className="ios-input" />
           </label>
           <label className="flex flex-col gap-1 text-sm md:col-span-2">
             Vidro
-            <select value={tipoVidro} onChange={(e) => setTipoVidro(e.target.value)} className="border rounded px-3 py-2">
+            <select value={tipoVidro} onChange={(e) => setTipoVidro(e.target.value)} className="ios-input">
               {vidros.map((v) => (
                 <option key={v.nome} value={v.nome}>{v.nome} (R$ {v.precoUnitario.toFixed(2)}/m²)</option>
               ))}
@@ -194,16 +202,17 @@ export default function NovoOrcamentoForm({
           </label>
           <label className="flex flex-col gap-1 text-sm md:col-span-3">
             Descrição/local (opcional)
-            <input value={descricao} onChange={(e) => setDescricao(e.target.value)} className="border rounded px-3 py-2" placeholder="Ex: Sala, Quarto 1..." />
+            <input value={descricao} onChange={(e) => setDescricao(e.target.value)} className="ios-input" placeholder="Ex: Sala, Quarto 1..." />
           </label>
-          <button onClick={adicionarItem} type="button" className="self-end bg-slate-800 hover:bg-slate-900 text-white rounded px-4 py-2 font-semibold md:col-span-1">
+          <button onClick={adicionarItem} type="button" className="ios-btn ios-btn-dark md:col-span-3 w-fit">
             Adicionar item
           </button>
+          </div>
         </div>
       </div>
 
       {itens.length > 0 && (
-        <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+        <div className="glass-card p-4 overflow-x-auto">
           <h2 className="font-semibold mb-3">Itens do orçamento</h2>
           <table className="w-full text-sm">
             <thead>
@@ -227,7 +236,7 @@ export default function NovoOrcamentoForm({
                   <td>{i.resultado.vidroM2Total.toFixed(2)}</td>
                   <td className="font-semibold">R$ {i.resultado.totalMateriais.toFixed(2)}</td>
                   <td>
-                    <button onClick={() => removerItem(i.chave)} className="text-red-600 text-xs hover:underline">remover</button>
+                    <button onClick={() => removerItem(i.chave)} className="ios-btn ios-btn-danger !py-1 !px-2.5 text-xs">remover</button>
                   </td>
                 </tr>
               ))}
@@ -237,19 +246,19 @@ export default function NovoOrcamentoForm({
       )}
 
       {algumReaproveitamento && (
-        <div className="bg-amber-50 border border-amber-300 text-amber-800 rounded-xl p-4 text-sm">
+        <div className="glass-card p-4 text-sm text-amber-800" style={{ background: "rgba(255, 251, 235, 0.75)" }}>
           ♻️ Este orçamento reaproveita sobras/retalhos que já estão em estoque. Considere aplicar um desconto ao cliente pelo material reaproveitado.
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow p-4 grid gap-3 md:grid-cols-4">
+      <div className="glass-card p-4 grid gap-3 md:grid-cols-4">
         <label className="flex flex-col gap-1 text-sm">
           Desconto (R$)
-          <input type="number" min={0} step="0.01" value={descontoValor} onChange={(e) => setDescontoValor(Number(e.target.value))} className="border rounded px-3 py-2" />
+          <input type="number" min={0} step="0.01" value={descontoValor} onChange={(e) => setDescontoValor(Number(e.target.value))} className="ios-input" />
         </label>
         <label className="flex flex-col gap-1 text-sm md:col-span-2">
           Motivo do desconto
-          <input value={descontoMotivo} onChange={(e) => setDescontoMotivo(e.target.value)} className="border rounded px-3 py-2" placeholder="Ex: aproveitamento de sobras em estoque" />
+          <input value={descontoMotivo} onChange={(e) => setDescontoMotivo(e.target.value)} className="ios-input" placeholder="Ex: aproveitamento de sobras em estoque" />
         </label>
         <div className="flex flex-col justify-end text-right">
           <div className="text-sm text-slate-500">Subtotal: R$ {subtotal.toFixed(2)}</div>
@@ -259,7 +268,7 @@ export default function NovoOrcamentoForm({
 
       {erro && <div className="text-red-600 text-sm">{erro}</div>}
 
-      <button onClick={salvar} disabled={isPending} className="self-end bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg px-6 py-3 font-bold shadow">
+      <button onClick={salvar} disabled={isPending} className="self-end ios-btn ios-btn-success !px-6 !py-3 text-base">
         {isPending ? "Salvando..." : "Salvar orçamento"}
       </button>
     </div>

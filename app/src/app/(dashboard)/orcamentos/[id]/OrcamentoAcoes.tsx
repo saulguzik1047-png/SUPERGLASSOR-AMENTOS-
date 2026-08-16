@@ -50,11 +50,13 @@ export default function OrcamentoAcoes({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [statusAtual, setStatusAtual] = useState(status);
+  const [enviando, setEnviando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
-  function gerarPdf() {
+  function construirPdf() {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text(`Orçamento #${numero}`, 14, 18);
+    doc.text(`Orçamento #${numero} — SULGLASS`, 14, 18);
     doc.setFontSize(10);
     doc.text(`Data: ${criadoEm}`, 14, 25);
     doc.text(`Cliente: ${clienteNome}`, 14, 31);
@@ -87,16 +89,53 @@ export default function OrcamentoAcoes({
       doc.text(`Obs: ${observacoes}`, 14, finalY + (descontoValor > 0 ? 26 : 20));
     }
 
-    doc.save(`orcamento-${numero}.pdf`);
+    return doc;
   }
 
-  function abrirWhatsapp() {
-    const numeroLimpo = clienteTelefone.replace(/\D/g, "");
-    const mensagem = encodeURIComponent(
-      `Olá ${clienteNome}! Segue o orçamento #${numero} no valor de R$ ${total.toFixed(2)}. Vou anexar o PDF com todos os detalhes aqui na conversa.`
+  function mensagemFormal() {
+    const primeiroNome = clienteNome.split(" ")[0];
+    return (
+      `Olá, ${primeiroNome}! 😊\n\n` +
+      `Agradecemos muito por confiar na *SULGLASS* para o seu projeto! Segue em anexo o orçamento nº ${numero}, ` +
+      `no valor total de R$ ${total.toFixed(2)}.\n\n` +
+      `Ficamos à disposição para tirar qualquer dúvida ou ajustar algum detalhe. Assim que estiver aprovado, ` +
+      `é só nos avisar por aqui que já damos sequência à produção. 🙏\n\n` +
+      `Um abraço,\nEquipe SULGLASS`
     );
-    const url = numeroLimpo ? `https://wa.me/${numeroLimpo}?text=${mensagem}` : `https://wa.me/?text=${mensagem}`;
-    window.open(url, "_blank");
+  }
+
+  function gerarPdf() {
+    construirPdf().save(`orcamento-${numero}-sulglass.pdf`);
+  }
+
+  async function enviarComPdfAnexado() {
+    setAviso(null);
+    setEnviando(true);
+    try {
+      const doc = construirPdf();
+      const blob = doc.output("blob");
+      const arquivo = new File([blob], `orcamento-${numero}-sulglass.pdf`, { type: "application/pdf" });
+      const mensagem = mensagemFormal();
+
+      const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean };
+      if (nav.share && nav.canShare && nav.canShare({ files: [arquivo] })) {
+        await nav.share({ files: [arquivo], title: `Orçamento #${numero} — SULGLASS`, text: mensagem });
+        return;
+      }
+
+      // Sem suporte a compartilhar arquivos (ex: computador): baixa o PDF e abre o WhatsApp com a mensagem pronta
+      doc.save(`orcamento-${numero}-sulglass.pdf`);
+      const numeroLimpo = clienteTelefone.replace(/\D/g, "");
+      const url = numeroLimpo
+        ? `https://wa.me/${numeroLimpo}?text=${encodeURIComponent(mensagem)}`
+        : `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, "_blank");
+      setAviso("Seu navegador não anexa o PDF automaticamente. O arquivo foi baixado — anexe-o na conversa do WhatsApp que abriu.");
+    } catch {
+      // usuário cancelou o compartilhamento — não faz nada
+    } finally {
+      setEnviando(false);
+    }
   }
 
   function mudarStatus(novo: "RASCUNHO" | "ENVIADO" | "APROVADO" | "RECUSADO") {
@@ -117,14 +156,18 @@ export default function OrcamentoAcoes({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
-        <button onClick={gerarPdf} className="bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-4 py-2 font-semibold text-sm">
-          📄 Gerar PDF
+        <button onClick={enviarComPdfAnexado} disabled={enviando} className="ios-btn ios-btn-success">
+          {enviando ? "Preparando..." : "💬📎 Enviar PDF pelo WhatsApp"}
         </button>
-        <button onClick={abrirWhatsapp} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 font-semibold text-sm">
-          💬 Enviar pelo WhatsApp
+        <button onClick={gerarPdf} className="ios-btn ios-btn-dark">
+          📄 Baixar PDF
         </button>
       </div>
-      <p className="text-xs text-slate-500">Gere o PDF primeiro e anexe-o na conversa do WhatsApp que será aberta.</p>
+      {aviso && <p className="text-xs text-amber-700">{aviso}</p>}
+      <p className="text-xs text-slate-500">
+        No celular, o PDF já sai anexado ao abrir o compartilhamento — só escolher o WhatsApp e o contato.
+      </p>
+
 
       <div className="flex flex-wrap gap-2 items-center pt-2 border-t mt-2">
         <span className="text-sm text-slate-500">Status:</span>
@@ -133,13 +176,13 @@ export default function OrcamentoAcoes({
             key={s}
             disabled={isPending}
             onClick={() => mudarStatus(s)}
-            className={`text-xs px-3 py-1.5 rounded-full font-medium ${statusAtual === s ? "bg-blue-600 text-white" : "bg-slate-100 hover:bg-slate-200"}`}
+            className={`ios-pill ${statusAtual === s ? "bg-blue-600 text-white" : "bg-white/60 hover:bg-white/90"}`}
           >
             {s}
           </button>
         ))}
         {statusAtual === "RASCUNHO" && (
-          <button onClick={excluir} disabled={isPending} className="ml-auto text-red-600 text-xs hover:underline">
+          <button onClick={excluir} disabled={isPending} className="ml-auto ios-btn ios-btn-danger !py-1.5 !px-3 text-xs">
             Excluir orçamento
           </button>
         )}
