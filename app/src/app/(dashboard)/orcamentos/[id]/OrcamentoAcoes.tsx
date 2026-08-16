@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { atualizarStatusOrcamento, excluirOrcamento } from "@/lib/actions";
+import { atualizarStatusOrcamento, excluirOrcamento, duplicarOrcamento } from "@/lib/actions";
 
 interface ItemPdf {
   descricao: string;
@@ -14,6 +14,14 @@ interface ItemPdf {
   corPerfil: string;
   tipoVidro: string;
   valorItem: number;
+}
+
+interface Empresa {
+  nome: string;
+  cnpj: string | null;
+  endereco: string | null;
+  telefone: string | null;
+  rodape: string | null;
 }
 
 export default function OrcamentoAcoes({
@@ -27,6 +35,8 @@ export default function OrcamentoAcoes({
   descontoValor,
   descontoMotivo,
   observacoes,
+  validadeDias,
+  empresa,
   subtotal,
   total,
   criadoEm,
@@ -42,12 +52,15 @@ export default function OrcamentoAcoes({
   descontoValor: number;
   descontoMotivo: string | null;
   observacoes: string | null;
+  validadeDias: number;
+  empresa: Empresa;
   subtotal: number;
   total: number;
   criadoEm: string;
   itens: ItemPdf[];
 }) {
   const router = useRouter();
+  const [duplicando, setDuplicando] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [statusAtual, setStatusAtual] = useState(status);
   const [enviando, setEnviando] = useState(false);
@@ -56,15 +69,33 @@ export default function OrcamentoAcoes({
   function construirPdf() {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text(`Orçamento #${numero} — SULGLASS`, 14, 18);
+    doc.text(`${empresa.nome} — Orçamento #${numero}`, 14, 18);
+    doc.setFontSize(9);
+    let y = 24;
+    const linhaEmpresa = [empresa.cnpj && `CNPJ: ${empresa.cnpj}`, empresa.telefone && `Tel: ${empresa.telefone}`].filter(Boolean).join(" · ");
+    if (linhaEmpresa) {
+      doc.text(linhaEmpresa, 14, y);
+      y += 5;
+    }
+    if (empresa.endereco) {
+      doc.text(empresa.endereco, 14, y);
+      y += 5;
+    }
+    y += 2;
     doc.setFontSize(10);
-    doc.text(`Data: ${criadoEm}`, 14, 25);
-    doc.text(`Cliente: ${clienteNome}`, 14, 31);
-    doc.text(`Telefone: ${clienteTelefone}`, 14, 36);
-    if (clienteEndereco) doc.text(`Endereço: ${clienteEndereco}`, 14, 41);
+    doc.text(`Data: ${criadoEm}  ·  Validade: ${validadeDias} dias`, 14, y);
+    y += 6;
+    doc.text(`Cliente: ${clienteNome}`, 14, y);
+    y += 5;
+    doc.text(`Telefone: ${clienteTelefone}`, 14, y);
+    y += 5;
+    if (clienteEndereco) {
+      doc.text(`Endereço: ${clienteEndereco}`, 14, y);
+      y += 5;
+    }
 
     autoTable(doc, {
-      startY: 48,
+      startY: y + 4,
       head: [["Item", "Medidas (cm)", "Qtd", "Cor", "Vidro", "Valor (R$)"]],
       body: itens.map((i) => [
         i.descricao,
@@ -79,14 +110,22 @@ export default function OrcamentoAcoes({
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
     doc.text(`Mão de obra: R$ ${maoDeObra.toFixed(2)}`, 14, finalY);
     doc.text(`Subtotal: R$ ${subtotal.toFixed(2)}`, 14, finalY + 5);
+    let yFinal = finalY + 10;
     if (descontoValor > 0) {
-      doc.text(`Desconto: R$ ${descontoValor.toFixed(2)}${descontoMotivo ? ` (${descontoMotivo})` : ""}`, 14, finalY + 10);
+      doc.text(`Desconto: R$ ${descontoValor.toFixed(2)}${descontoMotivo ? ` (${descontoMotivo})` : ""}`, 14, yFinal);
+      yFinal += 8;
     }
     doc.setFontSize(13);
-    doc.text(`Total: R$ ${total.toFixed(2)}`, 14, finalY + (descontoValor > 0 ? 18 : 12));
+    doc.text(`Total: R$ ${total.toFixed(2)}`, 14, yFinal);
+    yFinal += 8;
+    doc.setFontSize(10);
     if (observacoes) {
-      doc.setFontSize(10);
-      doc.text(`Obs: ${observacoes}`, 14, finalY + (descontoValor > 0 ? 26 : 20));
+      doc.text(`Obs: ${observacoes}`, 14, yFinal);
+      yFinal += 6;
+    }
+    if (empresa.rodape) {
+      doc.setFontSize(8);
+      doc.text(empresa.rodape, 14, yFinal, { maxWidth: 180 });
     }
 
     return doc;
@@ -96,11 +135,11 @@ export default function OrcamentoAcoes({
     const primeiroNome = clienteNome.split(" ")[0];
     return (
       `Olá, ${primeiroNome}! 😊\n\n` +
-      `Agradecemos muito por confiar na *SULGLASS* para o seu projeto! Segue em anexo o orçamento nº ${numero}, ` +
-      `no valor total de R$ ${total.toFixed(2)}.\n\n` +
+      `Agradecemos muito por confiar na *${empresa.nome}* para o seu projeto! Segue em anexo o orçamento nº ${numero}, ` +
+      `no valor total de R$ ${total.toFixed(2)} (válido por ${validadeDias} dias).\n\n` +
       `Ficamos à disposição para tirar qualquer dúvida ou ajustar algum detalhe. Assim que estiver aprovado, ` +
       `é só nos avisar por aqui que já damos sequência à produção. 🙏\n\n` +
-      `Um abraço,\nEquipe SULGLASS`
+      `Um abraço,\nEquipe ${empresa.nome}`
     );
   }
 
@@ -153,6 +192,18 @@ export default function OrcamentoAcoes({
     });
   }
 
+  function duplicar() {
+    setDuplicando(true);
+    startTransition(async () => {
+      try {
+        const resp = await duplicarOrcamento(orcamentoId);
+        router.push(`/orcamentos/${resp.orcamentoId}`);
+      } finally {
+        setDuplicando(false);
+      }
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
@@ -161,6 +212,14 @@ export default function OrcamentoAcoes({
         </button>
         <button onClick={gerarPdf} className="ios-btn ios-btn-dark">
           📄 Baixar PDF
+        </button>
+        {statusAtual === "RASCUNHO" && (
+          <button onClick={() => router.push(`/orcamentos/${orcamentoId}/editar`)} className="ios-btn ios-btn-secondary">
+            ✏️ Editar
+          </button>
+        )}
+        <button onClick={duplicar} disabled={duplicando} className="ios-btn ios-btn-secondary">
+          {duplicando ? "Duplicando..." : "📋 Duplicar"}
         </button>
       </div>
       {aviso && <p className="text-xs text-amber-700">{aviso}</p>}

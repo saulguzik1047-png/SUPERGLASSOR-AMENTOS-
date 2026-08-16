@@ -54,6 +54,7 @@ model Orcamento {
   descontoValor  Float           @default(0)
   descontoMotivo String?
   observacoes    String?
+  validadeDias   Int             @default(15)
   status         String          @default("RASCUNHO") // RASCUNHO, ENVIADO, APROVADO, RECUSADO
   subtotal       Float           @default(0)
   total          Float           @default(0)
@@ -90,4 +91,14 @@ model EstoqueSobra {
   origemOrcamentoId Int?
   disponivel        Boolean  @default(true)
   createdAt         DateTime @default(now())
+}
+
+// Linha única com os dados da empresa exibidos no PDF do orçamento
+model ConfiguracaoEmpresa {
+  id       Int     @id @default(1)
+  nome     String  @default("SULGLASS")
+  cnpj     String?
+  endereco String?
+  telefone String?
+  rodape   String? // texto livre exibido no rodapé do PDF (ex: condições gerais)
 }

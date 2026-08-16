@@ -3,8 +3,14 @@ import { criarCliente, excluirCliente } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientesPage() {
-  const clientes = await prisma.cliente.findMany({ orderBy: { nome: "asc" } });
+export default async function ClientesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+  const clientes = await prisma.cliente.findMany({
+    where: q
+      ? { OR: [{ nome: { contains: q } }, { telefone: { contains: q } }, { endereco: { contains: q } }] }
+      : undefined,
+    orderBy: { nome: "asc" },
+  });
 
   async function excluir(formData: FormData) {
     "use server";
@@ -16,6 +22,16 @@ export default async function ClientesPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold">Clientes</h1>
 
+      <form method="GET" className="flex gap-2">
+        <input
+          name="q"
+          defaultValue={q ?? ""}
+          placeholder="Buscar por nome, telefone ou endereço..."
+          className="ios-input flex-1"
+        />
+        <button className="ios-btn ios-btn-secondary">Buscar</button>
+      </form>
+
       <form action={criarCliente} className="glass-card p-4 grid gap-3 md:grid-cols-4">
         <input name="nome" placeholder="Nome" required className="ios-input md:col-span-1" />
         <input name="endereco" placeholder="Endereço" className="ios-input md:col-span-2" />
@@ -26,7 +42,7 @@ export default async function ClientesPage() {
       </form>
 
       <div className="glass-card divide-y divide-white/40">
-        {clientes.length === 0 && <p className="p-4 text-slate-500 text-sm">Nenhum cliente cadastrado.</p>}
+        {clientes.length === 0 && <p className="p-4 text-slate-500 text-sm">Nenhum cliente encontrado.</p>}
         {clientes.map((c) => (
           <div key={c.id} className="p-4 flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -43,3 +59,4 @@ export default async function ClientesPage() {
     </div>
   );
 }
+

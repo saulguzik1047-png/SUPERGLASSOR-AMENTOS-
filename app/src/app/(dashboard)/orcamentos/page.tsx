@@ -17,11 +17,22 @@ const statusColor: Record<string, string> = {
   RECUSADO: "bg-red-100 text-red-700",
 };
 
-export default async function OrcamentosPage() {
+export default async function OrcamentosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string }>;
+}) {
+  const { q, status } = await searchParams;
   const orcamentos = await prisma.orcamento.findMany({
+    where: {
+      ...(status ? { status } : {}),
+      ...(q ? { cliente: { nome: { contains: q } } } : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: { cliente: true, itens: true },
   });
+
+  const statusOptions = ["", "RASCUNHO", "ENVIADO", "APROVADO", "RECUSADO"];
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,8 +43,18 @@ export default async function OrcamentosPage() {
         </Link>
       </div>
 
+      <form method="GET" className="flex flex-wrap gap-2">
+        <input name="q" defaultValue={q ?? ""} placeholder="Buscar por cliente..." className="ios-input flex-1 min-w-[160px]" />
+        <select name="status" defaultValue={status ?? ""} className="ios-input w-auto">
+          {statusOptions.map((s) => (
+            <option key={s} value={s}>{s ? statusLabel[s] : "Todos os status"}</option>
+          ))}
+        </select>
+        <button className="ios-btn ios-btn-secondary">Filtrar</button>
+      </form>
+
       <div className="glass-card divide-y divide-white/40">
-        {orcamentos.length === 0 && <p className="p-4 text-slate-500 text-sm">Nenhum orçamento cadastrado ainda.</p>}
+        {orcamentos.length === 0 && <p className="p-4 text-slate-500 text-sm">Nenhum orçamento encontrado.</p>}
         {orcamentos.map((o) => (
           <Link key={o.id} href={`/orcamentos/${o.id}`} className="p-4 flex items-center justify-between gap-4 flex-wrap hover:bg-slate-50">
             <div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Architects_Daughter } from "next/font/google";
 import "./globals.css";
 
@@ -21,7 +21,17 @@ const sketchFont = Architects_Daughter({
 export const metadata: Metadata = {
   title: "SULGLASS — Orçamentos",
   description: "App de orçamentos de esquadrias de alumínio e vidro temperado",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SULGLASS",
+  },
 };
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
+};
+
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

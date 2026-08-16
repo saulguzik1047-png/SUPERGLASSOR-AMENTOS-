@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { calcularOrcamentoItem, type PrecosMateriais, type ResultadoCalculo } from "@/lib/calculo";
-import { criarOrcamento } from "@/lib/actions";
+import { criarOrcamento, atualizarOrcamento, type ItemOrcamentoInput } from "@/lib/actions";
 import EsquadriaSketch from "./EsquadriaSketch";
 
 interface Cliente { id: number; nome: string; telefone: string }
@@ -23,6 +23,17 @@ interface ItemForm {
   resultado: ResultadoCalculo;
 }
 
+export interface OrcamentoParaEditar {
+  id: number;
+  clienteId: number;
+  maoDeObra: number;
+  descontoValor: number;
+  descontoMotivo: string;
+  observacoes: string;
+  validadeDias: number;
+  itens: ItemOrcamentoInput[];
+}
+
 export default function NovoOrcamentoForm({
   clientes,
   tipos,
@@ -30,6 +41,7 @@ export default function NovoOrcamentoForm({
   precos,
   comprimentoBarraM,
   sobrasDisponiveisCm,
+  edicao,
 }: {
   clientes: Cliente[];
   tipos: TipoEsquadria[];
@@ -37,17 +49,48 @@ export default function NovoOrcamentoForm({
   precos: PrecosMateriais;
   comprimentoBarraM: number;
   sobrasDisponiveisCm: number[];
+  edicao?: OrcamentoParaEditar;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
 
-  const [clienteId, setClienteId] = useState<number | "">(clientes[0]?.id ?? "");
-  const [maoDeObra, setMaoDeObra] = useState(0);
-  const [descontoValor, setDescontoValor] = useState(0);
-  const [descontoMotivo, setDescontoMotivo] = useState("");
-  const [observacoes, setObservacoes] = useState("");
-  const [itens, setItens] = useState<ItemForm[]>([]);
+  const [clienteId, setClienteId] = useState<number | "">(edicao?.clienteId ?? clientes[0]?.id ?? "");
+  const [maoDeObra, setMaoDeObra] = useState(edicao?.maoDeObra ?? 0);
+  const [descontoValor, setDescontoValor] = useState(edicao?.descontoValor ?? 0);
+  const [descontoMotivo, setDescontoMotivo] = useState(edicao?.descontoMotivo ?? "");
+  const [observacoes, setObservacoes] = useState(edicao?.observacoes ?? "");
+  const [validadeDias, setValidadeDias] = useState(edicao?.validadeDias ?? 15);
+  const [itens, setItens] = useState<ItemForm[]>(() => {
+    if (!edicao) return [];
+    return edicao.itens.map((i) => {
+      const tipo = tipos.find((t) => t.id === i.tipoEsquadriaId);
+      const resultado = calcularOrcamentoItem({
+        categoria: tipo?.categoria ?? "JANELA_CORRER",
+        numFolhas: tipo?.numFolhas ?? 2,
+        larguraCm: i.larguraCm,
+        alturaCm: i.alturaCm,
+        quantidade: i.quantidade,
+        parametrosJson: tipo?.parametros,
+        precoM2Vidro: i.precoM2Vidro,
+        precos,
+        comprimentoBarraM,
+        sobrasPerfilDisponiveisM: [],
+      });
+      return {
+        chave: crypto.randomUUID(),
+        tipoEsquadriaId: i.tipoEsquadriaId,
+        descricao: i.descricao ?? tipo?.nome ?? "",
+        larguraCm: i.larguraCm,
+        alturaCm: i.alturaCm,
+        quantidade: i.quantidade,
+        corPerfil: i.corPerfil,
+        tipoVidro: i.tipoVidro,
+        precoM2Vidro: i.precoM2Vidro,
+        resultado,
+      };
+    });
+  });
 
   const [tipoEsquadriaId, setTipoEsquadriaId] = useState<number | "">(tipos[0]?.id ?? "");
   const [descricao, setDescricao] = useState("");
@@ -112,12 +155,13 @@ export default function NovoOrcamentoForm({
     setErro(null);
     startTransition(async () => {
       try {
-        const resp = await criarOrcamento({
+        const payload = {
           clienteId: Number(clienteId),
           maoDeObra,
           descontoValor,
           descontoMotivo,
           observacoes,
+          validadeDias,
           itens: itens.map((i) => ({
             tipoEsquadriaId: i.tipoEsquadriaId,
             descricao: i.descricao,
@@ -128,7 +172,8 @@ export default function NovoOrcamentoForm({
             tipoVidro: i.tipoVidro,
             precoM2Vidro: i.precoM2Vidro,
           })),
-        });
+        };
+        const resp = edicao ? await atualizarOrcamento(edicao.id, payload) : await criarOrcamento(payload);
         router.push(`/orcamentos/${resp.orcamentoId}`);
       } catch (e) {
         setErro(e instanceof Error ? e.message : "Erro ao salvar orçamento.");
@@ -155,6 +200,10 @@ export default function NovoOrcamentoForm({
         <label className="flex flex-col gap-1 text-sm">
           Observações
           <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} className="ios-input" placeholder="Prazo, condições de pagamento..." />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Validade do orçamento (dias)
+          <input type="number" min={1} value={validadeDias} onChange={(e) => setValidadeDias(Number(e.target.value))} className="ios-input" />
         </label>
       </div>
 
@@ -269,7 +318,7 @@ export default function NovoOrcamentoForm({
       {erro && <div className="text-red-600 text-sm">{erro}</div>}
 
       <button onClick={salvar} disabled={isPending} className="self-end ios-btn ios-btn-success !px-6 !py-3 text-base">
-        {isPending ? "Salvando..." : "Salvar orçamento"}
+        {isPending ? "Salvando..." : edicao ? "Salvar alterações" : "Salvar orçamento"}
       </button>
     </div>
   );

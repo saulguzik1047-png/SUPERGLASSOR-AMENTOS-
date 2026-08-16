@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logout } from "@/lib/auth-actions";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,9 +16,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span className="font-bold text-lg tracking-tight">
             SUL<span className="text-blue-600">GLASS</span>
           </span>
+          <form action={logout} className="ml-auto">
+            <button className="ios-pill bg-white/60 hover:bg-white/90 text-slate-600">Sair</button>
+          </form>
         </div>
       </header>
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">{children}</main>
+
     </div>
 
   );

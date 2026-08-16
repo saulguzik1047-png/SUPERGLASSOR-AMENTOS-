@@ -1,16 +1,23 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { obterConfiguracaoEmpresa } from "@/lib/actions";
 import OrcamentoAcoes from "./OrcamentoAcoes";
 import type { ResultadoCalculo } from "@/lib/calculo";
 
 export default async function OrcamentoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const orcamento = await prisma.orcamento.findUnique({
-    where: { id: Number(id) },
-    include: { cliente: true, itens: { include: { tipoEsquadria: true } } },
-  });
+  const [orcamento, empresa] = await Promise.all([
+    prisma.orcamento.findUnique({
+      where: { id: Number(id) },
+      include: { cliente: true, itens: { include: { tipoEsquadria: true } } },
+    }),
+    obterConfiguracaoEmpresa(),
+  ]);
 
   if (!orcamento) notFound();
+
+  const dataValidade = new Date(orcamento.createdAt);
+  dataValidade.setDate(dataValidade.getDate() + orcamento.validadeDias);
 
   return (
     <div className="flex flex-col gap-6">
@@ -33,6 +40,8 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
           descontoValor={orcamento.descontoValor}
           descontoMotivo={orcamento.descontoMotivo}
           observacoes={orcamento.observacoes}
+          validadeDias={orcamento.validadeDias}
+          empresa={empresa}
           subtotal={orcamento.subtotal}
           total={orcamento.total}
           criadoEm={new Date(orcamento.createdAt).toLocaleDateString("pt-BR")}
@@ -92,6 +101,7 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
           </div>
         )}
         <div className="text-2xl font-bold">Total: R$ {orcamento.total.toFixed(2)}</div>
+        <div className="text-xs text-slate-400">Válido até {dataValidade.toLocaleDateString("pt-BR")} ({orcamento.validadeDias} dias)</div>
         {orcamento.observacoes && <div className="text-sm text-slate-500 mt-2">Obs: {orcamento.observacoes}</div>}
       </div>
     </div>
