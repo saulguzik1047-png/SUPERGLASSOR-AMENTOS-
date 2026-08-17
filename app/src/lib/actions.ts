@@ -342,6 +342,50 @@ export async function desativarMaterial(id: number) {
   revalidatePath("/orcamentos/novo");
 }
 
+export async function criarTipoEsquadria(formData: FormData) {
+  const nome = String(formData.get("nome") ?? "").trim();
+  const categoria = String(formData.get("categoria") ?? "JANELA_CORRER");
+  const numFolhas = Number(formData.get("numFolhas") ?? 1);
+  const formulaKey = categoria;
+  const descricao = String(formData.get("descricao") ?? "").trim() || null;
+  const parametros = String(formData.get("parametros") ?? "{}").trim() || "{}";
+
+  if (!nome || !Number.isInteger(numFolhas) || numFolhas < 1) throw new Error("Informe nome e quantidade válida de folhas/placas.");
+  try {
+    JSON.parse(parametros);
+  } catch {
+    throw new Error("Os parâmetros precisam estar em JSON válido.");
+  }
+
+  await prisma.tipoEsquadria.create({ data: { nome, categoria, numFolhas, formulaKey, descricao, parametros } });
+  revalidatePath("/produtos");
+  revalidatePath("/orcamentos/novo");
+}
+
+export async function atualizarTipoEsquadria(formData: FormData) {
+  const id = Number(formData.get("id"));
+  const nome = String(formData.get("nome") ?? "").trim();
+  const categoria = String(formData.get("categoria") ?? "JANELA_CORRER");
+  const numFolhas = Number(formData.get("numFolhas") ?? 1);
+  const descricao = String(formData.get("descricao") ?? "").trim() || null;
+  const parametros = String(formData.get("parametros") ?? "{}").trim() || "{}";
+  if (!id || !nome || !Number.isInteger(numFolhas) || numFolhas < 1) throw new Error("Dados do produto inválidos.");
+  try {
+    JSON.parse(parametros);
+  } catch {
+    throw new Error("Os parâmetros precisam estar em JSON válido.");
+  }
+  await prisma.tipoEsquadria.update({ where: { id }, data: { nome, categoria, numFolhas, formulaKey: categoria, descricao, parametros } });
+  revalidatePath("/produtos");
+  revalidatePath("/orcamentos/novo");
+}
+
+export async function desativarTipoEsquadria(id: number) {
+  await prisma.tipoEsquadria.update({ where: { id }, data: { ativo: false } });
+  revalidatePath("/produtos");
+  revalidatePath("/orcamentos/novo");
+}
+
 export async function excluirOrcamento(id: number) {
   const orcamento = await prisma.orcamento.findUnique({ where: { id } });
   if (!orcamento) return;

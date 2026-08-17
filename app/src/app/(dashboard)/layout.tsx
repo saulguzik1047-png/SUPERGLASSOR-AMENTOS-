@@ -16,6 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <span className="font-bold text-lg tracking-tight">
             SUL<span className="text-blue-600">GLASS</span>
           </span>
+          <Link href="/produtos" className="text-sm text-slate-600 hover:text-blue-600">Produtos</Link>
           <form action={logout} className="ml-auto">
             <button className="ios-pill bg-white/60 hover:bg-white/90 text-slate-600">Sair</button>
           </form>

@@ -16,6 +16,7 @@ export default function EsquadriaSketch({
   const isCorrer = categoria.includes("CORRER");
   const isGiro = categoria === "PORTA_GIRO";
   const isFixo = categoria === "FIXO";
+  const isCobertura = categoria === "COBERTURA_PERGOLADO";
 
   const W = 320;
   const H = 230;
@@ -39,8 +40,7 @@ export default function EsquadriaSketch({
         </defs>
         <rect x={x0} y={y0} width={larguraDesenho} height={alturaDesenho} fill="url(#grid)" stroke="currentColor" strokeWidth={2.5} rx={isPorta ? 2 : 5} />
         <rect x={x0 + 7} y={y0 + 7} width={larguraDesenho - 14} height={alturaDesenho - 14} fill="none" stroke="currentColor" strokeWidth={1} opacity={0.65} rx={isPorta ? 1 : 3} />
-        <line x1={x0 + 3} y1={y0 + 16} x2={x1 - 3} y2={y0 + 16} stroke="currentColor" strokeWidth={2} opacity={0.5} />
-        <line x1={x0 + 3} y1={y1 - 16} x2={x1 - 3} y2={y1 - 16} stroke="currentColor" strokeWidth={2} opacity={0.5} />
+        {!isCobertura && <><line x1={x0 + 3} y1={y0 + 16} x2={x1 - 3} y2={y0 + 16} stroke="currentColor" strokeWidth={2} opacity={0.5} /><line x1={x0 + 3} y1={y1 - 16} x2={x1 - 3} y2={y1 - 16} stroke="currentColor" strokeWidth={2} opacity={0.5} /></>}
 
         {/* Divisão das folhas */}
         {linhas.map((lx, i) => (
@@ -65,6 +65,12 @@ export default function EsquadriaSketch({
         {categoria === "VITRO_BASCULANTE" && (
           <path d={`M ${x0 + 6} ${y1 - 6} L ${(x0 + x1) / 2} ${y0 + 8} L ${x1 - 6} ${y1 - 6}`} stroke="currentColor" fill="none" strokeDasharray="3 3" strokeWidth={1.2} opacity={0.8} />
         )}
+        {isCobertura && (
+          <g opacity="0.9">
+            {linhas.map((lx, i) => <g key={`t-${i}`}><line x1={lx} y1={y0 + 8} x2={lx} y2={y1 - 8} stroke="#b45309" strokeWidth={3} /><text x={lx + 4} y={y0 + 28} fontSize={9} fill="#92400e">T</text></g>)}
+            <text x={(x0 + x1) / 2} y={(y0 + y1) / 2} textAnchor="middle" fontSize={12} fill="currentColor">VIDRO SOBRE PERGOLADO</text>
+          </g>
+        )}
         {isFixo && <text x={(x0 + x1) / 2} y={(y0 + y1) / 2} textAnchor="middle" fontSize={13} fill="currentColor" opacity={0.55}>FIXO</text>}
 
         {/* Cota de largura (topo) */}
@@ -84,7 +90,7 @@ export default function EsquadriaSketch({
         </text>
       </svg>
       <p className="text-xs text-slate-500 -mt-1">
-        Vista frontal técnica · {folhas} folha{folhas > 1 ? "s" : ""} · {isPorta ? "porta" : "janela"} · cotas em cm
+        {isCobertura ? "Vista superior técnica · placas de vidro + emendas T" : `Vista frontal técnica · ${folhas} folha${folhas > 1 ? "s" : ""} · ${isPorta ? "porta" : "janela"}`} · cotas em cm
       </p>
     </div>
   );
