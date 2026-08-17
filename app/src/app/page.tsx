@@ -25,28 +25,26 @@ export default function Home() {
         <p className="text-slate-500 text-sm font-medium">Esquadrias de alumínio &amp; vidro temperado</p>
       </div>
 
-      <div className="w-full max-w-sm flex-1 flex flex-col gap-2.5 justify-center min-h-0">
+      <div className="w-full max-w-md flex-1 flex flex-col gap-3 justify-center min-h-0 py-2">
         <Link
           href={botoes[0].href}
-          className="glass-card flex items-center gap-3 px-4 py-3.5 text-base font-bold text-white shrink-0"
+          className="glass-card flex flex-1 items-center justify-center gap-4 px-5 text-xl font-bold text-white min-h-0 whitespace-nowrap active:scale-[0.98] transition-transform"
           style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(56,189,248,0.85))" }}
         >
-          <span className="text-2xl">{botoes[0].icone}</span>
+          <span className="text-3xl">{botoes[0].icone}</span>
           {botoes[0].label}
         </Link>
 
-        <div className="grid grid-cols-2 gap-2.5">
-          {botoes.slice(1).map((b) => (
-            <Link
-              key={b.href}
-              href={b.href}
-              className="glass-card flex flex-col items-center justify-center gap-1 py-3 px-2 text-center font-semibold text-slate-800 active:scale-95 transition-transform"
-            >
-              <span className="text-2xl">{b.icone}</span>
-              <span className="text-xs leading-tight">{b.label}</span>
-            </Link>
-          ))}
-        </div>
+        {botoes.slice(1).map((b) => (
+          <Link
+            key={b.href}
+            href={b.href}
+            className="glass-card flex flex-1 items-center gap-4 px-5 font-bold text-slate-800 text-lg min-h-0 whitespace-nowrap active:scale-[0.98] transition-transform"
+          >
+            <span className="text-3xl">{b.icone}</span>
+            <span className="leading-tight">{b.label}</span>
+          </Link>
+        ))}
       </div>
 
       <p className="text-xs text-slate-400">SULGLASS © {new Date().getFullYear()}</p>

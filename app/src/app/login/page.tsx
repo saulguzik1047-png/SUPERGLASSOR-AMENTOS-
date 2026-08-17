@@ -17,21 +17,21 @@ export default async function LoginPage({
         <p className="text-slate-500 text-sm font-medium">Orçamentos de esquadrias</p>
       </div>
 
-      <form action={login} className="glass-card w-full max-w-xs p-6 flex flex-col gap-3">
+      <form action={login} className="glass-card w-full max-w-md p-6 flex flex-col gap-4">
         <input type="hidden" name="next" value={next || "/"} />
-        <label className="flex flex-col gap-1 text-sm font-medium text-slate-700">
+        <label className="flex flex-col gap-2 text-base font-semibold text-slate-700">
           Senha de acesso
           <input
             type="password"
             name="senha"
             autoFocus
             required
-            className="ios-input text-center text-lg tracking-widest"
+            className="ios-input text-center text-2xl tracking-widest min-h-16"
             placeholder="••••••••"
           />
         </label>
         {erro && <p className="text-red-600 text-sm text-center">Senha incorreta. Tente novamente.</p>}
-        <button className="ios-btn ios-btn-primary justify-center mt-1">Entrar</button>
+        <button className="ios-btn ios-btn-primary justify-center mt-1 w-full min-h-16 !py-4 !text-xl whitespace-nowrap">Entrar</button>
       </form>
     </div>
   );
