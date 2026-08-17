@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { atualizarMaterial, criarMaterial, desativarMaterial } from "@/lib/actions";
+import { atualizarMaterial, criarMaterial, desativarMaterial, atualizarCor, criarCor, desativarCor } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +12,7 @@ const categoriaLabel: Record<string, string> = {
 
 export default async function MateriaisPage() {
   const materiais = await prisma.material.findMany({ where: { ativo: true }, orderBy: [{ categoria: "asc" }, { nome: "asc" }] });
+  const cores = await prisma.cor.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } });
   const grupos = ["PERFIL", "PERFIL_T", "VIDRO", "ACESSORIO"].map((categoria) => ({
     categoria,
     itens: materiais.filter((m) => m.categoria === categoria),
@@ -20,6 +21,11 @@ export default async function MateriaisPage() {
   async function desativar(formData: FormData) {
     "use server";
     await desativarMaterial(Number(formData.get("id")));
+  }
+
+  async function desativarCorAction(formData: FormData) {
+    "use server";
+    await desativarCor(Number(formData.get("id")));
   }
 
   return (
@@ -65,6 +71,37 @@ export default async function MateriaisPage() {
           </div>
         </div>
       ))}
+
+      <div className="glass-card p-4">
+        <h2 className="font-semibold mb-3">Cores dos perfis</h2>
+        <p className="text-slate-600 text-sm mb-3">
+          Cadastre aqui cada cor uma única vez. O percentual é somado sobre o preço do perfil na cor Branco (referência,
+          0%), sem precisar duplicar o cadastro de cada linha de perfil para cada cor.
+        </p>
+        <div className="flex flex-col divide-y">
+          {cores.length === 0 && <p className="text-slate-500 text-sm py-2">Nenhuma cor cadastrada ainda. Cadastre ao menos "Branco" com 0%.</p>}
+          {cores.map((c) => (
+            <form key={c.id} action={atualizarCor} className="py-2 flex items-center gap-3 flex-wrap">
+              <input type="hidden" name="id" value={c.id} />
+              <input name="nome" defaultValue={c.nome} className="border rounded px-2 py-1 flex-1 min-w-[140px]" />
+              <label className="text-sm text-slate-500 flex items-center gap-1">
+                Adicional sobre o Branco
+                <input name="percentualAdicional" type="number" step="0.1" defaultValue={c.percentualAdicional} className="border rounded px-2 py-1 w-20" />%
+              </label>
+              <button className="ios-btn ios-btn-primary !py-1.5 !px-4 text-xs">Salvar</button>
+              <button formAction={desativarCorAction} className="ios-btn ios-btn-danger !py-1.5 !px-3 text-xs">Remover</button>
+            </form>
+          ))}
+        </div>
+        <form action={criarCor} className="grid gap-3 md:grid-cols-4 mt-4">
+          <input name="nome" placeholder="Nome da cor (ex: Preto, Bronze)" required className="border rounded px-3 py-2 md:col-span-2" />
+          <label className="inline-flex items-center border rounded bg-white overflow-hidden px-3">
+            <input name="percentualAdicional" type="number" step="0.1" defaultValue={0} placeholder="0" className="py-2 w-full outline-none" />
+            <span className="text-slate-400">% sobre o Branco</span>
+          </label>
+          <button className="ios-btn ios-btn-dark w-fit">Adicionar cor</button>
+        </form>
+      </div>
 
       <div className="glass-card p-4">
         <h2 className="font-semibold mb-3">Adicionar novo material</h2>

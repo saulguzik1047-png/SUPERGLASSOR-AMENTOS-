@@ -36,6 +36,7 @@ export interface OrcamentoParaEditar {
   itens: ItemOrcamentoInput[];
 }
 interface Perfil { id: number; nome: string; precoUnitario: number; comprimentoBarraM: number }
+interface Cor { id: number; nome: string; percentualAdicional: number }
 
 export default function NovoOrcamentoForm({
   clientes,
@@ -43,6 +44,7 @@ export default function NovoOrcamentoForm({
   vidros,
   perfis,
   precos,
+  cores,
   comprimentoBarraM,
   sobrasDisponiveisCm,
   edicao,
@@ -52,6 +54,7 @@ export default function NovoOrcamentoForm({
   vidros: Vidro[];
   perfis: Perfil[];
   precos: PrecosMateriais;
+  cores: Cor[];
   comprimentoBarraM: number;
   sobrasDisponiveisCm: number[];
   edicao?: OrcamentoParaEditar;
@@ -68,6 +71,7 @@ export default function NovoOrcamentoForm({
   const [descontoMotivo, setDescontoMotivo] = useState(edicao?.descontoMotivo ?? "");
   const [observacoes, setObservacoes] = useState(edicao?.observacoes ?? "");
   const [validadeDias, setValidadeDias] = useState(edicao?.validadeDias ?? 15);
+  const percentualCor = (nome: string) => cores.find((c) => c.nome === nome)?.percentualAdicional ?? 0;
   const [itens, setItens] = useState<ItemForm[]>(() => {
     if (!edicao) return [];
     return edicao.itens.map((i) => {
@@ -82,7 +86,7 @@ export default function NovoOrcamentoForm({
         parametrosJson: tipo?.parametros,
         precoM2Vidro: i.precoM2Vidro,
         perfilNome: perfil?.nome,
-        precos: perfil ? { ...precos, perfilMetro: perfil.precoUnitario } : precos,
+        precos: perfil ? { ...precos, perfilMetro: perfil.precoUnitario * (1 + percentualCor(i.corPerfil) / 100) } : precos,
         comprimentoBarraM: perfil?.comprimentoBarraM ?? comprimentoBarraM,
         sobrasPerfilDisponiveisM: [],
       });
@@ -109,7 +113,7 @@ export default function NovoOrcamentoForm({
   const larguraNum = paraNumeroDecimal(larguraCm);
   const alturaNum = paraNumeroDecimal(alturaCm);
   const [quantidade, setQuantidade] = useState(1);
-  const [corPerfil, setCorPerfil] = useState("Branco");
+  const [corPerfil, setCorPerfil] = useState(cores.find((c) => c.nome === "Branco")?.nome ?? cores[0]?.nome ?? "Branco");
   const [tipoVidro, setTipoVidro] = useState(vidros[0]?.nome ?? "");
   const [perfilMaterialId, setPerfilMaterialId] = useState<number | "">(perfis[0]?.id ?? "");
   const [preenchimentoAmpliado, setPreenchimentoAmpliado] = useState(false);
@@ -149,7 +153,7 @@ export default function NovoOrcamentoForm({
       parametrosJson: tipo.parametros,
       precoM2Vidro: vidro.precoUnitario,
       perfilNome: perfil.nome,
-      precos: { ...precos, perfilMetro: perfil.precoUnitario },
+      precos: { ...precos, perfilMetro: perfil.precoUnitario * (1 + percentualCor(corPerfil) / 100) },
       comprimentoBarraM: perfil.comprimentoBarraM,
       sobrasPerfilDisponiveisM: sobrasEmMetros,
     });
@@ -293,7 +297,12 @@ export default function NovoOrcamentoForm({
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Cor do perfil
-            <input value={corPerfil} onChange={(e) => setCorPerfil(e.target.value)} className="ios-input" />
+            <select value={corPerfil} onChange={(e) => setCorPerfil(e.target.value)} className="ios-input">
+              {cores.length === 0 && <option value="Branco">Branco</option>}
+              {cores.map((c) => (
+                <option key={c.id} value={c.nome}>{c.nome}{c.percentualAdicional !== 0 ? ` (+${c.percentualAdicional}%)` : ""}</option>
+              ))}
+            </select>
           </label>
           <label className="flex flex-col gap-1 text-sm md:col-span-2">
             Vidro
@@ -376,7 +385,12 @@ export default function NovoOrcamentoForm({
                 </>
               )}
               {passo === 4 && (
-                <input autoFocus value={corPerfil} onChange={(e) => setCorPerfil(e.target.value)} className="ios-input w-full min-h-16 text-2xl font-semibold text-center" placeholder="Ex.: Branco, Preto, Bronze" />
+                <select autoFocus value={corPerfil} onChange={(e) => setCorPerfil(e.target.value)} className="ios-input w-full min-h-16 text-xl font-semibold">
+                  {cores.length === 0 && <option value="Branco">Branco</option>}
+                  {cores.map((c) => (
+                    <option key={c.id} value={c.nome}>{c.nome}{c.percentualAdicional !== 0 ? ` (+${c.percentualAdicional}%)` : ""}</option>
+                  ))}
+                </select>
               )}
               {passo === 5 && (
                 <select autoFocus value={tipoVidro} onChange={(e) => setTipoVidro(e.target.value)} className="ios-input w-full min-h-16 text-xl font-semibold">

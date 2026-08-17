@@ -32,16 +32,22 @@ export async function excluirCliente(id: number) {
   revalidatePath("/clientes");
 }
 
-async function montarPrecosMateriais(perfilMaterialId?: number): Promise<{ precos: PrecosMateriais; comprimentoBarraM: number; perfilNome: string; perfilTNome: string; precoM2VidroPorNome: Record<string, number>; perfilMaterialId?: number }> {
-  const materiais = await prisma.material.findMany({ where: { ativo: true } });
+async function montarPrecosMateriais(perfilMaterialId?: number, corNome?: string): Promise<{ precos: PrecosMateriais; comprimentoBarraM: number; perfilNome: string; perfilTNome: string; precoM2VidroPorNome: Record<string, number>; perfilMaterialId?: number }> {
+  const [materiais, cores] = await Promise.all([
+    prisma.material.findMany({ where: { ativo: true } }),
+    prisma.cor.findMany({ where: { ativo: true } }),
+  ]);
   const precoVenda = (material: { precoUnitario: number; margemPercentual: number } | undefined, padrao: number) => material ? material.precoUnitario * (1 + material.margemPercentual / 100) : padrao;
   const porNome = (nome: string, padrao: number) => precoVenda(materiais.find((m) => m.nome === nome), padrao);
   const perfil = materiais.find((m) => m.categoria === "PERFIL" && m.id === perfilMaterialId) ?? materiais.find((m) => m.categoria === "PERFIL");
   const perfilT = materiais.find((m) => m.categoria === "PERFIL_T");
+  // Percentual da cor escolhida sobre o preço do perfil na cor branca (referência), evitando duplicar material por cor
+  const percentualCor = corNome ? cores.find((c) => c.nome === corNome)?.percentualAdicional ?? 0 : 0;
+  const multiplicadorCor = 1 + percentualCor / 100;
 
   const precos: PrecosMateriais = {
-    perfilMetro: precoVenda(perfil, 18.5),
-    perfilTMetro: precoVenda(perfilT, 24),
+    perfilMetro: precoVenda(perfil, 18.5) * multiplicadorCor,
+    perfilTMetro: precoVenda(perfilT, 24) * multiplicadorCor,
     rodizio: porNome("Rodízio simples", 6.5),
     dobradica: porNome("Dobradiça de aço", 9),
     fechoTrava: porNome("Fecho/trava", 14),
@@ -106,7 +112,7 @@ async function calcularItensEEstoque(itensInput: ItemOrcamentoInput[]) {
     }
     const tipo = tiposPorId.get(item.tipoEsquadriaId);
     if (!tipo) throw new Error("Tipo de esquadria inválido.");
-    const { precos, comprimentoBarraM, perfilNome, perfilTNome, precoM2VidroPorNome, perfilMaterialId } = await montarPrecosMateriais(item.perfilMaterialId);
+    const { precos, comprimentoBarraM, perfilNome, perfilTNome, precoM2VidroPorNome, perfilMaterialId } = await montarPrecosMateriais(item.perfilMaterialId, item.corPerfil);
     const precoM2Vidro = precoM2VidroPorNome[item.tipoVidro];
     if (precoM2Vidro === undefined) throw new Error(`Vidro não encontrado: ${item.tipoVidro}. Atualize a página e selecione um vidro cadastrado.`);
 
@@ -362,6 +368,34 @@ export async function criarMaterial(formData: FormData) {
 
 export async function desativarMaterial(id: number) {
   await prisma.material.update({ where: { id }, data: { ativo: false } });
+  revalidatePath("/materiais");
+  revalidatePath("/orcamentos/novo");
+}
+
+export async function criarCor(formData: FormData) {
+  const nome = String(formData.get("nome") ?? "").trim();
+  const percentualAdicional = Number(formData.get("percentualAdicional") ?? 0);
+  if (!nome) throw new Error("Informe o nome da cor.");
+  if (Number.isNaN(percentualAdicional)) throw new Error("Percentual inválido.");
+
+  await prisma.cor.create({ data: { nome, percentualAdicional } });
+  revalidatePath("/materiais");
+  revalidatePath("/orcamentos/novo");
+}
+
+export async function atualizarCor(formData: FormData) {
+  const id = Number(formData.get("id"));
+  const nome = String(formData.get("nome") ?? "").trim();
+  const percentualAdicional = Number(formData.get("percentualAdicional") ?? 0);
+  if (!id || !nome || Number.isNaN(percentualAdicional)) throw new Error("Dados da cor inválidos.");
+
+  await prisma.cor.update({ where: { id }, data: { nome, percentualAdicional } });
+  revalidatePath("/materiais");
+  revalidatePath("/orcamentos/novo");
+}
+
+export async function desativarCor(id: number) {
+  await prisma.cor.update({ where: { id }, data: { ativo: false } });
   revalidatePath("/materiais");
   revalidatePath("/orcamentos/novo");
 }

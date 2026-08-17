@@ -2,11 +2,12 @@ import { prisma } from "./prisma";
 
 // Dados usados para montar o formulário de orçamento (novo ou edição)
 export async function carregarDadosFormularioOrcamento() {
-  const [clientes, tipos, materiais, sobras] = await Promise.all([
+  const [clientes, tipos, materiais, sobras, cores] = await Promise.all([
     prisma.cliente.findMany({ orderBy: { nome: "asc" } }),
     prisma.tipoEsquadria.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
     prisma.material.findMany({ where: { ativo: true } }),
     prisma.estoqueSobra.findMany({ where: { tipo: "PERFIL", disponivel: true } }),
+    prisma.cor.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
   ]);
 
   const perfis = materiais
@@ -34,6 +35,7 @@ export async function carregarDadosFormularioOrcamento() {
     vidros,
     precos,
     perfis,
+    cores: cores.map((c) => ({ id: c.id, nome: c.nome, percentualAdicional: c.percentualAdicional })),
     comprimentoBarraM: perfil?.comprimentoBarraM ?? 6,
     sobrasDisponiveisCm: sobras.map((s) => s.medida1),
   };

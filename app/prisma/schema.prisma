@@ -33,6 +33,15 @@ model Material {
   ativo            Boolean @default(true)
 }
 
+// Cores disponíveis para os perfis. O percentual é somado sobre o preço do perfil na cor de referência (Branco = 0%),
+// evitando ter que cadastrar um Material duplicado para cada combinação de linha de perfil x cor.
+model Cor {
+  id                  Int     @id @default(autoincrement())
+  nome                String  @unique
+  percentualAdicional Float   @default(0)
+  ativo               Boolean @default(true)
+}
+
 // Modelo de esquadria (ex: Janela de Correr 2 Folhas) com a fórmula de cálculo associada
 model TipoEsquadria {
   id          Int             @id @default(autoincrement())

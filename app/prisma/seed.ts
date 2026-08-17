@@ -47,6 +47,12 @@ async function main() {
     if (!existente) await prisma.tipoEsquadria.create({ data: t });
   }
 
+  const cores = [{ nome: "Branco", percentualAdicional: 0 }];
+  for (const c of cores) {
+    const existente = await prisma.cor.findFirst({ where: { nome: c.nome } });
+    if (!existente) await prisma.cor.create({ data: c });
+  }
+
   console.log("Seed concluído.");
 }
 
