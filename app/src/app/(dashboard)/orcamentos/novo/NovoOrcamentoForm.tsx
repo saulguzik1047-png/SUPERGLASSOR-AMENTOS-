@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { calcularOrcamentoItem, type PrecosMateriais, type ResultadoCalculo } from "@/lib/calculo";
 import { criarOrcamento, atualizarOrcamento, criarClienteRapido, type ItemOrcamentoInput } from "@/lib/actions";
 import EsquadriaSketch from "./EsquadriaSketch";
+import { paraNumeroDecimal, sanitizarDecimal, formatarMoeda, digitosParaValorMoeda } from "@/lib/formatters";
 
 interface Cliente { id: number; nome: string; telefone: string }
 interface TipoEsquadria { id: number; nome: string; categoria: string; numFolhas: number; parametros: string }
@@ -103,8 +104,10 @@ export default function NovoOrcamentoForm({
 
   const [tipoEsquadriaId, setTipoEsquadriaId] = useState<number | "">(tipos[0]?.id ?? "");
   const [descricao, setDescricao] = useState("");
-  const [larguraCm, setLarguraCm] = useState(100);
-  const [alturaCm, setAlturaCm] = useState(100);
+  const [larguraCm, setLarguraCm] = useState("");
+  const [alturaCm, setAlturaCm] = useState("");
+  const larguraNum = paraNumeroDecimal(larguraCm);
+  const alturaNum = paraNumeroDecimal(alturaCm);
   const [quantidade, setQuantidade] = useState(1);
   const [corPerfil, setCorPerfil] = useState("Branco");
   const [tipoVidro, setTipoVidro] = useState(vidros[0]?.nome ?? "");
@@ -132,12 +135,16 @@ export default function NovoOrcamentoForm({
     const vidro = vidros.find((v) => v.nome === tipoVidro);
     const perfil = perfis.find((p) => p.id === perfilMaterialId);
     if (!tipo || !vidro || !perfil) return;
+    if (larguraNum <= 0 || alturaNum <= 0) {
+      setErro("Informe a largura e a altura do item.");
+      return;
+    }
 
     const resultado = calcularOrcamentoItem({
       categoria: tipo.categoria,
       numFolhas: tipo.numFolhas,
-      larguraCm,
-      alturaCm,
+      larguraCm: larguraNum,
+      alturaCm: alturaNum,
       quantidade,
       parametrosJson: tipo.parametros,
       precoM2Vidro: vidro.precoUnitario,
@@ -153,8 +160,8 @@ export default function NovoOrcamentoForm({
         chave: crypto.randomUUID(),
         tipoEsquadriaId: tipo.id,
         descricao: descricao || tipo.nome,
-        larguraCm,
-        alturaCm,
+        larguraCm: larguraNum,
+        alturaCm: alturaNum,
         quantidade,
         corPerfil,
               perfilMaterialId: perfil.id,
@@ -164,6 +171,7 @@ export default function NovoOrcamentoForm({
       },
     ]);
     setDescricao("");
+    setErro(null);
   }
 
   function removerItem(chave: string) {
@@ -236,7 +244,7 @@ export default function NovoOrcamentoForm({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Mão de obra (R$)
-          <span className="inline-flex items-center ios-input p-0 overflow-hidden"><span className="px-3 text-slate-500">R$</span><input type="number" min={0} step="0.01" value={maoDeObra} onChange={(e) => setMaoDeObra(Number(e.target.value))} className="flex-1 bg-transparent py-2 pr-3 outline-none" /></span>
+          <span className="inline-flex items-center ios-input p-0 overflow-hidden"><span className="px-3 text-slate-500">R$</span><input type="text" inputMode="decimal" value={formatarMoeda(maoDeObra)} onChange={(e) => setMaoDeObra(digitosParaValorMoeda(e.target.value))} className="flex-1 bg-transparent py-2 pr-3 outline-none text-right" /></span>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Observações
@@ -259,8 +267,8 @@ export default function NovoOrcamentoForm({
           <EsquadriaSketch
             categoria={tipos.find((t) => t.id === tipoEsquadriaId)?.categoria ?? "JANELA_CORRER"}
             numFolhas={tipos.find((t) => t.id === tipoEsquadriaId)?.numFolhas ?? 2}
-            larguraCm={larguraCm}
-            alturaCm={alturaCm}
+            larguraCm={larguraNum}
+            alturaCm={alturaNum}
           />
           <div className="grid gap-3 md:grid-cols-3">
           <label className="flex flex-col gap-1 text-sm md:col-span-3">
@@ -273,11 +281,11 @@ export default function NovoOrcamentoForm({
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Largura (cm)
-            <input type="number" min={1} value={larguraCm} onChange={(e) => setLarguraCm(Number(e.target.value))} className="ios-input" />
+            <input type="text" inputMode="decimal" placeholder="Ex: 120" value={larguraCm} onChange={(e) => setLarguraCm(sanitizarDecimal(e.target.value))} className="ios-input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             Altura (cm)
-            <input type="number" min={1} value={alturaCm} onChange={(e) => setAlturaCm(Number(e.target.value))} className="ios-input" />
+            <input type="text" inputMode="decimal" placeholder="Ex: 150" value={alturaCm} onChange={(e) => setAlturaCm(sanitizarDecimal(e.target.value))} className="ios-input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
             {tipos.find((t) => t.id === tipoEsquadriaId)?.categoria === "COBERTURA_PERGOLADO" ? "Quantidade de placas de vidro" : "Quantidade"}
@@ -291,7 +299,7 @@ export default function NovoOrcamentoForm({
             Vidro
             <select value={tipoVidro} onChange={(e) => setTipoVidro(e.target.value)} className="ios-input">
               {vidros.map((v) => (
-                <option key={v.nome} value={v.nome}>{v.nome} (R$ {v.precoUnitario.toFixed(2)}/m²)</option>
+                <option key={v.nome} value={v.nome}>{v.nome} (R$ {formatarMoeda(v.precoUnitario)}/m²)</option>
               ))}
             </select>
           </label>
@@ -299,7 +307,7 @@ export default function NovoOrcamentoForm({
             Linha do perfil
             <select value={perfilMaterialId} onChange={(e) => setPerfilMaterialId(Number(e.target.value))} className="ios-input">
               {perfis.map((p) => (
-                <option key={p.id} value={p.id}>{p.nome} — R$ {p.precoUnitario.toFixed(2)}/m · barra {p.comprimentoBarraM}m</option>
+                <option key={p.id} value={p.id}>{p.nome} — R$ {formatarMoeda(p.precoUnitario)}/m · barra {p.comprimentoBarraM}m</option>
               ))}
             </select>
           </label>
@@ -334,30 +342,30 @@ export default function NovoOrcamentoForm({
                   <EsquadriaSketch
                     categoria={tipos.find((t) => t.id === tipoEsquadriaId)?.categoria ?? "JANELA_CORRER"}
                     numFolhas={tipos.find((t) => t.id === tipoEsquadriaId)?.numFolhas ?? 2}
-                    larguraCm={larguraCm}
-                    alturaCm={alturaCm}
+                    larguraCm={larguraNum}
+                    alturaCm={alturaNum}
                   />
                 </>
               )}
               {passo === 1 && (
                 <>
-                  <input autoFocus type="number" inputMode="decimal" min={1} value={larguraCm} onChange={(e) => setLarguraCm(Number(e.target.value))} className="ios-input w-full min-h-20 text-4xl font-bold text-center" />
+                  <input autoFocus type="text" inputMode="decimal" placeholder="Ex: 120" value={larguraCm} onChange={(e) => setLarguraCm(sanitizarDecimal(e.target.value))} className="ios-input w-full min-h-20 text-4xl font-bold text-center" />
                   <EsquadriaSketch
                     categoria={tipos.find((t) => t.id === tipoEsquadriaId)?.categoria ?? "JANELA_CORRER"}
                     numFolhas={tipos.find((t) => t.id === tipoEsquadriaId)?.numFolhas ?? 2}
-                    larguraCm={larguraCm}
-                    alturaCm={alturaCm}
+                    larguraCm={larguraNum}
+                    alturaCm={alturaNum}
                   />
                 </>
               )}
               {passo === 2 && (
                 <>
-                  <input autoFocus type="number" inputMode="decimal" min={1} value={alturaCm} onChange={(e) => setAlturaCm(Number(e.target.value))} className="ios-input w-full min-h-20 text-4xl font-bold text-center" />
+                  <input autoFocus type="text" inputMode="decimal" placeholder="Ex: 150" value={alturaCm} onChange={(e) => setAlturaCm(sanitizarDecimal(e.target.value))} className="ios-input w-full min-h-20 text-4xl font-bold text-center" />
                   <EsquadriaSketch
                     categoria={tipos.find((t) => t.id === tipoEsquadriaId)?.categoria ?? "JANELA_CORRER"}
                     numFolhas={tipos.find((t) => t.id === tipoEsquadriaId)?.numFolhas ?? 2}
-                    larguraCm={larguraCm}
-                    alturaCm={alturaCm}
+                    larguraCm={larguraNum}
+                    alturaCm={alturaNum}
                   />
                 </>
               )}
@@ -372,12 +380,12 @@ export default function NovoOrcamentoForm({
               )}
               {passo === 5 && (
                 <select autoFocus value={tipoVidro} onChange={(e) => setTipoVidro(e.target.value)} className="ios-input w-full min-h-16 text-xl font-semibold">
-                  {vidros.map((v) => <option key={v.nome} value={v.nome}>{v.nome} — R$ {v.precoUnitario.toFixed(2)}/m²</option>)}
+                  {vidros.map((v) => <option key={v.nome} value={v.nome}>{v.nome} — R$ {formatarMoeda(v.precoUnitario)}/m²</option>)}
                 </select>
               )}
               {passo === 6 && (
                 <select autoFocus value={perfilMaterialId} onChange={(e) => setPerfilMaterialId(Number(e.target.value))} className="ios-input w-full min-h-16 text-xl font-semibold">
-                  {perfis.map((p) => <option key={p.id} value={p.id}>{p.nome} — R$ {p.precoUnitario.toFixed(2)}/m · barra {p.comprimentoBarraM}m</option>)}
+                  {perfis.map((p) => <option key={p.id} value={p.id}>{p.nome} — R$ {formatarMoeda(p.precoUnitario)}/m · barra {p.comprimentoBarraM}m</option>)}
                 </select>
               )}
               {passo === 7 && (
@@ -391,12 +399,12 @@ export default function NovoOrcamentoForm({
                   <EsquadriaSketch
                     categoria={tipos.find((t) => t.id === tipoEsquadriaId)?.categoria ?? "JANELA_CORRER"}
                     numFolhas={tipos.find((t) => t.id === tipoEsquadriaId)?.numFolhas ?? 2}
-                    larguraCm={larguraCm}
-                    alturaCm={alturaCm}
+                    larguraCm={larguraNum}
+                    alturaCm={alturaNum}
                   />
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 grid gap-2 text-lg">
                     <div className="flex justify-between gap-3"><span className="text-slate-500">Tipo</span><span className="font-bold text-right">{tipos.find((t) => t.id === tipoEsquadriaId)?.nome ?? "—"}</span></div>
-                    <div className="flex justify-between gap-3"><span className="text-slate-500">Medidas</span><span className="font-bold">{larguraCm} × {alturaCm} cm</span></div>
+                    <div className="flex justify-between gap-3"><span className="text-slate-500">Medidas</span><span className="font-bold">{larguraCm || "—"} × {alturaCm || "—"} cm</span></div>
                     <div className="flex justify-between gap-3"><span className="text-slate-500">Quantidade</span><span className="font-bold">{quantidade}</span></div>
                     <div className="flex justify-between gap-3"><span className="text-slate-500">Cor do perfil</span><span className="font-bold">{corPerfil || "—"}</span></div>
                     <div className="flex justify-between gap-3"><span className="text-slate-500">Vidro</span><span className="font-bold text-right">{tipoVidro || "—"}</span></div>
@@ -413,7 +421,14 @@ export default function NovoOrcamentoForm({
                 <button type="button" onClick={() => setPasso((p) => p - 1)} className="ios-btn ios-btn-secondary flex-1 min-h-16 !text-lg whitespace-nowrap">Voltar</button>
               )}
               {passo < PASSO_FINAL ? (
-                <button type="button" onClick={() => setPasso((p) => p + 1)} className="ios-btn ios-btn-primary flex-1 min-h-16 !text-xl whitespace-nowrap">Próximo</button>
+                <button
+                  type="button"
+                  disabled={(passo === 1 && larguraNum <= 0) || (passo === 2 && alturaNum <= 0)}
+                  onClick={() => setPasso((p) => p + 1)}
+                  className="ios-btn ios-btn-primary flex-1 min-h-16 !text-xl whitespace-nowrap"
+                >
+                  Próximo
+                </button>
               ) : (
                 <button type="button" onClick={() => { adicionarItem(); setPreenchimentoAmpliado(false); }} className="ios-btn ios-btn-success flex-1 min-h-16 !text-xl">Adicionar item ao orçamento</button>
               )}
@@ -445,8 +460,8 @@ export default function NovoOrcamentoForm({
                   <td>{i.larguraCm}×{i.alturaCm}cm</td>
                   <td>{i.quantidade}</td>
                   <td>{i.resultado.barrasPerfilNecessarias}</td>
-                  <td>{i.resultado.vidroM2Total.toFixed(2)}</td>
-                  <td className="font-semibold">R$ {i.resultado.totalMateriais.toFixed(2)}</td>
+                  <td>{formatarMoeda(i.resultado.vidroM2Total)}</td>
+                  <td className="font-semibold">R$ {formatarMoeda(i.resultado.totalMateriais)}</td>
                   <td>
                     <button onClick={() => removerItem(i.chave)} className="ios-btn ios-btn-danger !py-1 !px-2.5 text-xs">remover</button>
                   </td>
@@ -471,15 +486,15 @@ export default function NovoOrcamentoForm({
       <div className="glass-card p-4 grid gap-3 md:grid-cols-4">
         <label className="flex flex-col gap-1 text-sm">
           Desconto (R$)
-          <span className="inline-flex items-center ios-input p-0 overflow-hidden"><span className="px-3 text-slate-500">R$</span><input type="number" min={0} step="0.01" value={descontoValor} onChange={(e) => setDescontoValor(Number(e.target.value))} className="flex-1 bg-transparent py-2 pr-3 outline-none" /></span>
+          <span className="inline-flex items-center ios-input p-0 overflow-hidden"><span className="px-3 text-slate-500">R$</span><input type="text" inputMode="decimal" value={formatarMoeda(descontoValor)} onChange={(e) => setDescontoValor(digitosParaValorMoeda(e.target.value))} className="flex-1 bg-transparent py-2 pr-3 outline-none text-right" /></span>
         </label>
         <label className="flex flex-col gap-1 text-sm md:col-span-2">
           Motivo do desconto
           <input value={descontoMotivo} onChange={(e) => setDescontoMotivo(e.target.value)} className="ios-input" placeholder="Ex: aproveitamento de sobras em estoque" />
         </label>
         <div className="flex flex-col justify-end text-right">
-          <div className="text-sm text-slate-500">Subtotal: R$ {subtotal.toFixed(2)}</div>
-          <div className="text-2xl font-bold">Total: R$ {total.toFixed(2)}</div>
+          <div className="text-sm text-slate-500">Subtotal: R$ {formatarMoeda(subtotal)}</div>
+          <div className="text-2xl font-bold">Total: R$ {formatarMoeda(total)}</div>
         </div>
       </div>
 
