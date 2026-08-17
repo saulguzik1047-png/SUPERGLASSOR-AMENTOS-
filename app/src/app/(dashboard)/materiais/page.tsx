@@ -40,10 +40,17 @@ export default async function MateriaisPage() {
                 <input type="hidden" name="id" value={m.id} />
                 <span className="flex-1 min-w-[180px]">{m.nome}</span>
                 <label className="text-sm text-slate-500 flex items-center gap-1">
-                  R$
-                  <input name="precoUnitario" type="number" step="0.01" min={0} defaultValue={m.precoUnitario} className="border rounded px-2 py-1 w-24" />
+                  Custo
+                  <span className="inline-flex items-center border rounded bg-white overflow-hidden"><span className="px-2 text-slate-400">R$</span><input name="precoUnitario" type="number" step="0.01" min={0} defaultValue={m.precoUnitario} className="px-2 py-1 w-24 outline-none" /></span>
                   / {m.unidade === "BARRA" ? "metro" : m.unidade === "M2" ? "m²" : "un"}
                 </label>
+                <label className="text-sm text-slate-500 flex items-center gap-1">
+                  Lucro
+                  <input name="margemPercentual" type="number" step="0.1" min={0} defaultValue={m.margemPercentual} className="border rounded px-2 py-1 w-20" />%
+                </label>
+                <span className="text-xs text-emerald-700 whitespace-nowrap">
+                  Venda: R$ {(m.precoUnitario * (1 + m.margemPercentual / 100)).toFixed(2)}
+                </span>
                 {g.categoria === "PERFIL" && (
                   <label className="text-sm text-slate-500 flex items-center gap-1">
                     Barra de
@@ -65,6 +72,7 @@ export default async function MateriaisPage() {
           <input name="nome" placeholder="Nome do material" required className="border rounded px-3 py-2 md:col-span-2" />
           <select name="categoria" className="border rounded px-3 py-2">
             <option value="PERFIL">Perfil de alumínio</option>
+            <option value="PERFIL_T">Perfil T para emenda</option>
             <option value="VIDRO">Vidro</option>
             <option value="ACESSORIO">Acessório</option>
           </select>
@@ -74,7 +82,8 @@ export default async function MateriaisPage() {
             <option value="M2">m²</option>
             <option value="ROLO">Rolo/metro</option>
           </select>
-          <input name="precoUnitario" type="number" step="0.01" min={0} placeholder="Preço (R$)" required className="border rounded px-3 py-2" />
+          <span className="inline-flex items-center border rounded bg-white overflow-hidden"><span className="px-3 text-slate-400">R$</span><input name="precoUnitario" type="number" step="0.01" min={0} placeholder="Custo" required className="px-3 py-2 w-full outline-none" /></span>
+          <input name="margemPercentual" type="number" step="0.1" min={0} defaultValue={0} placeholder="Lucro (%)" className="border rounded px-3 py-2" />
           <input name="comprimentoBarra" type="number" step="0.1" min={0.1} placeholder="Comprimento da barra (m) — só perfil" className="border rounded px-3 py-2 md:col-span-2" />
           <button className="ios-btn ios-btn-dark w-fit">Adicionar</button>
         </form>

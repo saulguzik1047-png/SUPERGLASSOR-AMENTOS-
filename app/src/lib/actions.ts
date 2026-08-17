@@ -34,13 +34,14 @@ export async function excluirCliente(id: number) {
 
 async function montarPrecosMateriais(perfilMaterialId?: number): Promise<{ precos: PrecosMateriais; comprimentoBarraM: number; perfilNome: string; perfilTNome: string; perfilMaterialId?: number }> {
   const materiais = await prisma.material.findMany({ where: { ativo: true } });
-  const porNome = (nome: string, padrao: number) => materiais.find((m) => m.nome === nome)?.precoUnitario ?? padrao;
+  const precoVenda = (material: { precoUnitario: number; margemPercentual: number } | undefined, padrao: number) => material ? material.precoUnitario * (1 + material.margemPercentual / 100) : padrao;
+  const porNome = (nome: string, padrao: number) => precoVenda(materiais.find((m) => m.nome === nome), padrao);
   const perfil = materiais.find((m) => m.categoria === "PERFIL" && m.id === perfilMaterialId) ?? materiais.find((m) => m.categoria === "PERFIL");
   const perfilT = materiais.find((m) => m.categoria === "PERFIL_T");
 
   const precos: PrecosMateriais = {
-    perfilMetro: perfil?.precoUnitario ?? 18.5,
-    perfilTMetro: perfilT?.precoUnitario ?? 24,
+    perfilMetro: precoVenda(perfil, 18.5),
+    perfilTMetro: precoVenda(perfilT, 24),
     rodizio: porNome("Rodízio simples", 6.5),
     dobradica: porNome("Dobradiça de aço", 9),
     fechoTrava: porNome("Fecho/trava", 14),
@@ -53,7 +54,7 @@ async function montarPrecosMateriais(perfilMaterialId?: number): Promise<{ preco
 
   const precoM2VidroPorNome: Record<string, number> = {};
   for (const m of materiais.filter((m) => m.categoria === "VIDRO")) {
-    precoM2VidroPorNome[m.nome] = m.precoUnitario;
+    precoM2VidroPorNome[m.nome] = precoVenda(m, m.precoUnitario);
   }
 
   return { precos, comprimentoBarraM: perfil?.comprimentoBarra ?? 6, perfilNome: perfil?.nome ?? "Perfil de alumínio", perfilTNome: perfilT?.nome ?? "Perfil T para emenda", perfilMaterialId: perfil?.id };
@@ -322,13 +323,14 @@ export async function descartarSobra(id: number) {
 export async function atualizarMaterial(formData: FormData) {
   const id = Number(formData.get("id"));
   const precoUnitario = Number(formData.get("precoUnitario"));
+  const margemPercentual = Number(formData.get("margemPercentual") ?? 0);
   const comprimentoBarraRaw = formData.get("comprimentoBarra");
   const comprimentoBarra = comprimentoBarraRaw ? Number(comprimentoBarraRaw) : undefined;
-  if (!id || Number.isNaN(precoUnitario) || precoUnitario < 0) throw new Error("Preço inválido.");
+  if (!id || Number.isNaN(precoUnitario) || precoUnitario < 0 || Number.isNaN(margemPercentual) || margemPercentual < 0) throw new Error("Preço ou margem inválidos.");
 
   await prisma.material.update({
     where: { id },
-    data: { precoUnitario, ...(comprimentoBarra !== undefined ? { comprimentoBarra } : {}) },
+    data: { precoUnitario, margemPercentual, ...(comprimentoBarra !== undefined ? { comprimentoBarra } : {}) },
   });
   revalidatePath("/materiais");
   revalidatePath("/orcamentos/novo");
@@ -339,11 +341,12 @@ export async function criarMaterial(formData: FormData) {
   const categoria = String(formData.get("categoria") ?? "ACESSORIO");
   const unidade = String(formData.get("unidade") ?? "PECA");
   const precoUnitario = Number(formData.get("precoUnitario"));
+  const margemPercentual = Number(formData.get("margemPercentual") ?? 0);
   const comprimentoBarraRaw = formData.get("comprimentoBarra");
   const comprimentoBarra = comprimentoBarraRaw ? Number(comprimentoBarraRaw) : null;
-  if (!nome || Number.isNaN(precoUnitario) || precoUnitario < 0) throw new Error("Preencha nome e preço válido.");
+  if (!nome || Number.isNaN(precoUnitario) || precoUnitario < 0 || Number.isNaN(margemPercentual) || margemPercentual < 0) throw new Error("Preencha nome, preço e margem válidos.");
 
-  await prisma.material.create({ data: { nome, categoria, unidade, precoUnitario, comprimentoBarra } });
+  await prisma.material.create({ data: { nome, categoria, unidade, precoUnitario, margemPercentual, comprimentoBarra } });
   revalidatePath("/materiais");
   revalidatePath("/orcamentos/novo");
 }

@@ -29,6 +29,7 @@ model Material {
   unidade          String // BARRA, M2, PECA, ROLO
   comprimentoBarra Float? // metros, usado quando categoria = PERFIL
   precoUnitario    Float
+  margemPercentual Float    @default(0)
   ativo            Boolean @default(true)
 }
 

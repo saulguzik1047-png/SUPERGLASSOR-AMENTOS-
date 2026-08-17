@@ -221,7 +221,7 @@ export default function NovoOrcamentoForm({
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Mão de obra (R$)
-          <input type="number" min={0} step="0.01" value={maoDeObra} onChange={(e) => setMaoDeObra(Number(e.target.value))} className="ios-input" />
+          <span className="inline-flex items-center ios-input p-0 overflow-hidden"><span className="px-3 text-slate-500">R$</span><input type="number" min={0} step="0.01" value={maoDeObra} onChange={(e) => setMaoDeObra(Number(e.target.value))} className="flex-1 bg-transparent py-2 pr-3 outline-none" /></span>
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Observações
@@ -343,7 +343,7 @@ export default function NovoOrcamentoForm({
       <div className="glass-card p-4 grid gap-3 md:grid-cols-4">
         <label className="flex flex-col gap-1 text-sm">
           Desconto (R$)
-          <input type="number" min={0} step="0.01" value={descontoValor} onChange={(e) => setDescontoValor(Number(e.target.value))} className="ios-input" />
+          <span className="inline-flex items-center ios-input p-0 overflow-hidden"><span className="px-3 text-slate-500">R$</span><input type="number" min={0} step="0.01" value={descontoValor} onChange={(e) => setDescontoValor(Number(e.target.value))} className="flex-1 bg-transparent py-2 pr-3 outline-none" /></span>
         </label>
         <label className="flex flex-col gap-1 text-sm md:col-span-2">
           Motivo do desconto
