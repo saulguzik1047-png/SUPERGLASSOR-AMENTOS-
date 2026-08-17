@@ -26,6 +26,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "SULGLASS",
   },
+  colorScheme: "light",
 };
 
 export const viewport: Viewport = {
