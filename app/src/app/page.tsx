@@ -28,25 +28,29 @@ export default function Home() {
       {/* Botão destaque — Novo Orçamento */}
       <Link
         href={botoes[0].href}
-        className="glass-card shrink-0 flex items-center justify-center gap-3 px-4 font-bold text-white text-lg"
+        className="glass-card flex items-center justify-center gap-3 px-4 font-bold text-white text-xl shrink-0"
         style={{
           background: "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(56,189,248,0.85))",
-          flex: "1.6",
+          height: "18%",
+          minHeight: "4rem",
         }}
       >
         <span className="text-4xl">{botoes[0].icone}</span>
         {botoes[0].label}
       </Link>
 
-      {/* Grade 2×3 com os outros 6 botões */}
-      <div className="grid grid-cols-2 gap-3" style={{ flex: "3" }}>
+      {/* Grade 2×3 com os outros 6 botões — ocupa o restante da tela */}
+      <div
+        className="grid grid-cols-2 gap-3 min-h-0"
+        style={{ flex: "1 1 0", gridTemplateRows: "repeat(3, 1fr)" }}
+      >
         {botoes.slice(1).map((b) => (
           <Link
             key={b.href}
             href={b.href}
-            className="glass-card flex flex-col items-center justify-center gap-2 font-semibold text-slate-800 active:scale-95 transition-transform"
+            className="glass-card flex flex-col items-center justify-center gap-2 font-semibold text-slate-800 active:scale-95 transition-transform min-h-0"
           >
-            <span className="text-4xl">{b.icone}</span>
+            <span className="text-5xl">{b.icone}</span>
             <span className="text-sm leading-tight text-center px-1">{b.label}</span>
           </Link>
         ))}
