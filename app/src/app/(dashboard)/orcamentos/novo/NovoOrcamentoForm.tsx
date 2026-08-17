@@ -109,6 +109,7 @@ export default function NovoOrcamentoForm({
   const [corPerfil, setCorPerfil] = useState("Branco");
   const [tipoVidro, setTipoVidro] = useState(vidros[0]?.nome ?? "");
   const [perfilMaterialId, setPerfilMaterialId] = useState<number | "">(perfis[0]?.id ?? "");
+  const [preenchimentoAmpliado, setPreenchimentoAmpliado] = useState(false);
 
   const sobrasEmMetros = useMemo(() => sobrasDisponiveisCm.map((c) => c / 100), [sobrasDisponiveisCm]);
 
@@ -234,7 +235,12 @@ export default function NovoOrcamentoForm({
       </div>
 
       <div className="glass-card p-4">
-        <h2 className="font-semibold mb-3">Adicionar item</h2>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h2 className="font-semibold">Adicionar item</h2>
+          <button type="button" onClick={() => setPreenchimentoAmpliado(true)} className="ios-btn ios-btn-primary !py-2 !px-3 text-xs sm:text-sm">
+            Abrir preenchimento grande
+          </button>
+        </div>
         <div className="grid gap-4 md:grid-cols-[1.1fr_1.4fr]">
           <EsquadriaSketch
             categoria={tipos.find((t) => t.id === tipoEsquadriaId)?.categoria ?? "JANELA_CORRER"}
@@ -293,6 +299,66 @@ export default function NovoOrcamentoForm({
           </div>
         </div>
       </div>
+
+      {preenchimentoAmpliado && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 p-3 sm:p-6 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Preenchimento ampliado do item">
+          <div className="w-full max-w-3xl max-h-[96vh] overflow-y-auto rounded-2xl border border-slate-300 bg-white p-4 text-slate-900 shadow-2xl sm:p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">Modo celular</p>
+                <h2 className="text-2xl font-bold">Preencher item do orçamento</h2>
+                <p className="mt-1 text-sm text-slate-600">Informe as medidas com calma. O desenho e o cálculo acompanham os valores.</p>
+              </div>
+              <button type="button" onClick={() => setPreenchimentoAmpliado(false)} className="ios-btn ios-btn-dark !px-3 !py-2">Fechar</button>
+            </div>
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.2fr]">
+              <EsquadriaSketch
+                categoria={tipos.find((t) => t.id === tipoEsquadriaId)?.categoria ?? "JANELA_CORRER"}
+                numFolhas={tipos.find((t) => t.id === tipoEsquadriaId)?.numFolhas ?? 2}
+                larguraCm={larguraCm}
+                alturaCm={alturaCm}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-2 text-base font-semibold sm:col-span-2">Tipo de produto
+                  <select value={tipoEsquadriaId} onChange={(e) => setTipoEsquadriaId(Number(e.target.value))} className="ios-input min-h-12 text-base">
+                    {tipos.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-base font-semibold">Largura (cm)
+                  <input autoFocus type="number" inputMode="decimal" min={1} value={larguraCm} onChange={(e) => setLarguraCm(Number(e.target.value))} className="ios-input min-h-14 text-xl font-bold" />
+                </label>
+                <label className="flex flex-col gap-2 text-base font-semibold">Altura / profundidade (cm)
+                  <input type="number" inputMode="decimal" min={1} value={alturaCm} onChange={(e) => setAlturaCm(Number(e.target.value))} className="ios-input min-h-14 text-xl font-bold" />
+                </label>
+                <label className="flex flex-col gap-2 text-base font-semibold">{tipos.find((t) => t.id === tipoEsquadriaId)?.categoria === "COBERTURA_PERGOLADO" ? "Quantidade de placas" : "Quantidade"}
+                  <input type="number" inputMode="numeric" min={1} value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} className="ios-input min-h-14 text-xl font-bold" />
+                </label>
+                <label className="flex flex-col gap-2 text-base font-semibold">Cor do perfil
+                  <input value={corPerfil} onChange={(e) => setCorPerfil(e.target.value)} className="ios-input min-h-12 text-base" />
+                </label>
+                <label className="flex flex-col gap-2 text-base font-semibold sm:col-span-2">Tipo de vidro
+                  <select value={tipoVidro} onChange={(e) => setTipoVidro(e.target.value)} className="ios-input min-h-12 text-base">
+                    {vidros.map((v) => <option key={v.nome} value={v.nome}>{v.nome} — R$ {v.precoUnitario.toFixed(2)}/m²</option>)}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-base font-semibold sm:col-span-2">Linha do perfil
+                  <select value={perfilMaterialId} onChange={(e) => setPerfilMaterialId(Number(e.target.value))} className="ios-input min-h-12 text-base">
+                    {perfis.map((p) => <option key={p.id} value={p.id}>{p.nome} — R$ {p.precoUnitario.toFixed(2)}/m</option>)}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-base font-semibold sm:col-span-2">Descrição / local
+                  <input value={descricao} onChange={(e) => setDescricao(e.target.value)} className="ios-input min-h-12 text-base" placeholder="Ex.: Sala, quarto, cobertura" />
+                </label>
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setPreenchimentoAmpliado(false)} className="ios-btn ios-btn-secondary min-h-12">Continuar depois</button>
+              <button type="button" onClick={() => { adicionarItem(); setPreenchimentoAmpliado(false); }} className="ios-btn ios-btn-primary min-h-12">Adicionar item ao orçamento</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {itens.length > 0 && (
         <div className="glass-card p-4 overflow-x-auto">
