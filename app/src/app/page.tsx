@@ -28,10 +28,10 @@ export default function Home() {
       <div className="w-full max-w-md flex-1 flex flex-col gap-3 justify-center min-h-0 py-2">
         <Link
           href={botoes[0].href}
-          className="glass-card flex flex-1 items-center justify-center gap-4 px-5 text-xl font-bold text-white min-h-0 whitespace-nowrap active:scale-[0.98] transition-transform"
+          className="glass-card flex flex-1 items-center justify-center gap-4 px-5 text-2xl font-bold text-white min-h-0 whitespace-nowrap active:scale-[0.98] transition-transform"
           style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.92), rgba(56,189,248,0.85))" }}
         >
-          <span className="text-3xl">{botoes[0].icone}</span>
+          <span className="text-4xl">{botoes[0].icone}</span>
           {botoes[0].label}
         </Link>
 
@@ -39,9 +39,9 @@ export default function Home() {
           <Link
             key={b.href}
             href={b.href}
-            className="glass-card flex flex-1 items-center gap-4 px-5 font-bold text-slate-800 text-lg min-h-0 whitespace-nowrap active:scale-[0.98] transition-transform"
+            className="glass-card flex flex-1 items-center gap-4 px-5 font-bold text-slate-800 text-xl min-h-0 whitespace-nowrap active:scale-[0.98] transition-transform"
           >
-            <span className="text-3xl">{b.icone}</span>
+            <span className="text-4xl">{b.icone}</span>
             <span className="leading-tight">{b.label}</span>
           </Link>
         ))}
