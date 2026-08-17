@@ -7,7 +7,7 @@ import { calcularOrcamentoItem, type PrecosMateriais } from "./calculo";
 export async function criarCliente(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   const endereco = String(formData.get("endereco") ?? "").trim();
-  const telefone = String(formData.get("telefone") ?? "").trim();
+  const telefone = String(formData.get("telefone") ?? "").replace(/\D/g, "");
   if (!nome || !telefone) throw new Error("Nome e telefone são obrigatórios.");
 
   await prisma.cliente.create({ data: { nome, endereco: endereco || null, telefone } });
@@ -17,7 +17,7 @@ export async function criarCliente(formData: FormData) {
 
 export async function criarClienteRapido(nome: string, telefone: string) {
   const nomeNormalizado = nome.trim();
-  const telefoneNormalizado = telefone.trim();
+  const telefoneNormalizado = telefone.replace(/\D/g, "");
   if (!nomeNormalizado || !telefoneNormalizado) throw new Error("Informe nome e telefone do cliente.");
 
   const existente = await prisma.cliente.findFirst({ where: { telefone: telefoneNormalizado } });
@@ -32,7 +32,7 @@ export async function excluirCliente(id: number) {
   revalidatePath("/clientes");
 }
 
-async function montarPrecosMateriais(perfilMaterialId?: number): Promise<{ precos: PrecosMateriais; comprimentoBarraM: number; perfilNome: string; perfilTNome: string; perfilMaterialId?: number }> {
+async function montarPrecosMateriais(perfilMaterialId?: number): Promise<{ precos: PrecosMateriais; comprimentoBarraM: number; perfilNome: string; perfilTNome: string; precoM2VidroPorNome: Record<string, number>; perfilMaterialId?: number }> {
   const materiais = await prisma.material.findMany({ where: { ativo: true } });
   const precoVenda = (material: { precoUnitario: number; margemPercentual: number } | undefined, padrao: number) => material ? material.precoUnitario * (1 + material.margemPercentual / 100) : padrao;
   const porNome = (nome: string, padrao: number) => precoVenda(materiais.find((m) => m.nome === nome), padrao);
@@ -57,7 +57,7 @@ async function montarPrecosMateriais(perfilMaterialId?: number): Promise<{ preco
     precoM2VidroPorNome[m.nome] = precoVenda(m, m.precoUnitario);
   }
 
-  return { precos, comprimentoBarraM: perfil?.comprimentoBarra ?? 6, perfilNome: perfil?.nome ?? "Perfil de alumínio", perfilTNome: perfilT?.nome ?? "Perfil T para emenda", perfilMaterialId: perfil?.id };
+  return { precos, comprimentoBarraM: perfil?.comprimentoBarra ?? 6, perfilNome: perfil?.nome ?? "Perfil de alumínio", perfilTNome: perfilT?.nome ?? "Perfil T para emenda", precoM2VidroPorNome, perfilMaterialId: perfil?.id };
 }
 
 export interface ItemOrcamentoInput {
@@ -101,9 +101,14 @@ async function calcularItensEEstoque(itensInput: ItemOrcamentoInput[]) {
   const novasSobras: { medida1: number }[] = [];
 
   for (const item of itensInput) {
+    if (!Number.isFinite(item.larguraCm) || item.larguraCm <= 0 || !Number.isFinite(item.alturaCm) || item.alturaCm <= 0 || !Number.isInteger(item.quantidade) || item.quantidade < 1) {
+      throw new Error("Informe largura, altura e quantidade válidas para cada item.");
+    }
     const tipo = tiposPorId.get(item.tipoEsquadriaId);
     if (!tipo) throw new Error("Tipo de esquadria inválido.");
-    const { precos, comprimentoBarraM, perfilNome, perfilTNome, perfilMaterialId } = await montarPrecosMateriais(item.perfilMaterialId);
+    const { precos, comprimentoBarraM, perfilNome, perfilTNome, precoM2VidroPorNome, perfilMaterialId } = await montarPrecosMateriais(item.perfilMaterialId);
+    const precoM2Vidro = precoM2VidroPorNome[item.tipoVidro];
+    if (precoM2Vidro === undefined) throw new Error(`Vidro não encontrado: ${item.tipoVidro}. Atualize a página e selecione um vidro cadastrado.`);
 
     const disponiveisAgora = sobrasPool.filter((s) => s.restanteM > 0).map((s) => s.restanteM);
 
@@ -114,7 +119,7 @@ async function calcularItensEEstoque(itensInput: ItemOrcamentoInput[]) {
       alturaCm: item.alturaCm,
       quantidade: item.quantidade,
       parametrosJson: tipo.parametros,
-      precoM2Vidro: item.precoM2Vidro,
+      precoM2Vidro,
       perfilNome,
       perfilTNome,
       precos,
@@ -147,7 +152,7 @@ async function calcularItensEEstoque(itensInput: ItemOrcamentoInput[]) {
       quantidade: item.quantidade,
       corPerfil: item.corPerfil,
       tipoVidro: item.tipoVidro,
-      precoM2Vidro: item.precoM2Vidro,
+      precoM2Vidro,
       perfilMaterialId,
       perfilNome,
       precoPerfilMetro: precos.perfilMetro,
@@ -191,6 +196,9 @@ async function aplicarConsumoEstoque(
 }
 
 export async function criarOrcamento(input: CriarOrcamentoInput) {
+  if (!Number.isFinite(input.maoDeObra) || input.maoDeObra < 0 || !Number.isFinite(input.descontoValor) || input.descontoValor < 0) {
+    throw new Error("Mão de obra e desconto precisam ser valores válidos.");
+  }
   const { itensParaCriar, subtotalMateriais, alertasSobra, novasSobras, sobrasPool, sobrasDb } = await calcularItensEEstoque(input.itens);
 
   const subtotal = subtotalMateriais + input.maoDeObra;
@@ -277,6 +285,7 @@ export async function duplicarOrcamento(id: number) {
     corPerfil: i.corPerfil,
     tipoVidro: i.tipoVidro,
     precoM2Vidro: i.precoM2Vidro,
+    perfilMaterialId: i.perfilMaterialId ?? undefined,
   }));
 
   const resultado = await criarOrcamento({

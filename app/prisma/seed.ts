@@ -9,6 +9,7 @@ async function main() {
   const materiais = [
     { nome: "Linha convencional", categoria: "PERFIL", unidade: "BARRA", comprimentoBarra: 6, precoUnitario: 18.5 },
     { nome: "Linha Suprema", categoria: "PERFIL", unidade: "BARRA", comprimentoBarra: 6, precoUnitario: 32.5 },
+    { nome: "Linha Gold", categoria: "PERFIL", unidade: "BARRA", comprimentoBarra: 6, precoUnitario: 42.5 },
     { nome: "Perfil T para emenda de pergolado", categoria: "PERFIL_T", unidade: "BARRA", comprimentoBarra: 6, precoUnitario: 24 },
     { nome: "Vidro temperado incolor 8mm (m²)", categoria: "VIDRO", unidade: "M2", precoUnitario: 210 },
     { nome: "Vidro temperado incolor 10mm (m²)", categoria: "VIDRO", unidade: "M2", precoUnitario: 260 },

@@ -12,7 +12,7 @@ export default function ListaCortesButton({ cortes }: { cortes: CortePerfil[] })
 
   return (
     <>
-      <button type="button" onClick={() => setAberto(true)} className="ios-btn ios-btn-secondary !px-2.5 !py-1 text-xs whitespace-nowrap">
+      <button type="button" onClick={() => setAberto(true)} className="ios-btn ios-btn-success !px-2.5 !py-1 text-xs whitespace-nowrap">
         Lista de cortes
       </button>
       {aberto && (
