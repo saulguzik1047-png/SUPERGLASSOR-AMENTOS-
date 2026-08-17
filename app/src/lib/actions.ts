@@ -15,6 +15,18 @@ export async function criarCliente(formData: FormData) {
   revalidatePath("/orcamentos/novo");
 }
 
+export async function criarClienteRapido(nome: string, telefone: string) {
+  const nomeNormalizado = nome.trim();
+  const telefoneNormalizado = telefone.trim();
+  if (!nomeNormalizado || !telefoneNormalizado) throw new Error("Informe nome e telefone do cliente.");
+
+  const existente = await prisma.cliente.findFirst({ where: { telefone: telefoneNormalizado } });
+  const cliente = existente ?? await prisma.cliente.create({ data: { nome: nomeNormalizado, telefone: telefoneNormalizado } });
+  revalidatePath("/clientes");
+  revalidatePath("/orcamentos/novo");
+  return { id: cliente.id, nome: cliente.nome, telefone: cliente.telefone };
+}
+
 export async function excluirCliente(id: number) {
   await prisma.cliente.delete({ where: { id } });
   revalidatePath("/clientes");

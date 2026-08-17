@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { calcularOrcamentoItem, type PrecosMateriais, type ResultadoCalculo } from "@/lib/calculo";
-import { criarOrcamento, atualizarOrcamento, type ItemOrcamentoInput } from "@/lib/actions";
+import { criarOrcamento, atualizarOrcamento, criarClienteRapido, type ItemOrcamentoInput } from "@/lib/actions";
 import EsquadriaSketch from "./EsquadriaSketch";
 
 interface Cliente { id: number; nome: string; telefone: string }
@@ -58,6 +58,8 @@ export default function NovoOrcamentoForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
+  const [clienteNome, setClienteNome] = useState("");
+  const [clienteTelefone, setClienteTelefone] = useState("");
 
   const [clienteId, setClienteId] = useState<number | "">(edicao?.clienteId ?? clientes[0]?.id ?? "");
   const [maoDeObra, setMaoDeObra] = useState(edicao?.maoDeObra ?? 0);
@@ -159,15 +161,19 @@ export default function NovoOrcamentoForm({
   const algumReaproveitamento = itens.some((i) => i.resultado.metrosPerfilReaproveitadosEstoque > 0);
 
   function salvar() {
-    if (clienteId === "" || itens.length === 0) {
-      setErro("Selecione um cliente e adicione ao menos um item.");
+    if ((clienteId === "" && (!clienteNome.trim() || !clienteTelefone.trim())) || itens.length === 0) {
+      setErro("Informe um cliente com nome e telefone e adicione ao menos um item.");
       return;
     }
     setErro(null);
     startTransition(async () => {
       try {
+        const cliente = clienteNome.trim() && clienteTelefone.trim()
+          ? await criarClienteRapido(clienteNome, clienteTelefone)
+          : clientes.find((item) => item.id === clienteId);
+        if (!cliente) throw new Error("Não foi possível identificar o cliente.");
         const payload = {
-          clienteId: Number(clienteId),
+          clienteId: cliente.id,
           maoDeObra,
           descontoValor,
           descontoMotivo,
@@ -195,15 +201,23 @@ export default function NovoOrcamentoForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="glass-card p-4 grid gap-3 md:grid-cols-3">
+      <div className="glass-card p-4 grid gap-3 md:grid-cols-4">
         <label className="flex flex-col gap-1 text-sm">
-          Cliente
+          Cliente já cadastrado
           <select value={clienteId} onChange={(e) => setClienteId(Number(e.target.value))} className="ios-input">
-            {clientes.length === 0 && <option value="">Cadastre um cliente primeiro</option>}
+            <option value="">Selecionar depois</option>
             {clientes.map((c) => (
               <option key={c.id} value={c.id}>{c.nome} — {c.telefone}</option>
             ))}
           </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Nome do cliente
+          <input value={clienteNome} onChange={(e) => setClienteNome(e.target.value)} className="ios-input" placeholder="Digite para cadastrar direto" />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          Telefone / WhatsApp
+          <input value={clienteTelefone} onChange={(e) => setClienteTelefone(e.target.value)} className="ios-input" placeholder="5511999999999" />
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Mão de obra (R$)
