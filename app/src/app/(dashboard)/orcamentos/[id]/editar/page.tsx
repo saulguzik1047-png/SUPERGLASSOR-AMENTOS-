@@ -15,7 +15,7 @@ export default async function EditarOrcamentoPage({ params }: { params: Promise<
   if (!orcamento) notFound();
   if (orcamento.status !== "RASCUNHO") redirect(`/orcamentos/${orcamento.id}`);
 
-  const { clientes, tipos, vidros, precos, comprimentoBarraM, sobrasDisponiveisCm } = await carregarDadosFormularioOrcamento();
+  const { clientes, tipos, vidros, perfis, precos, comprimentoBarraM, sobrasDisponiveisCm } = await carregarDadosFormularioOrcamento();
 
   return (
     <div className="flex flex-col gap-6">
@@ -24,6 +24,7 @@ export default async function EditarOrcamentoPage({ params }: { params: Promise<
         clientes={clientes}
         tipos={tipos}
         vidros={vidros}
+        perfis={perfis}
         precos={precos}
         comprimentoBarraM={comprimentoBarraM}
         sobrasDisponiveisCm={sobrasDisponiveisCm}

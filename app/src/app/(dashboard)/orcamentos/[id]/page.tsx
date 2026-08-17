@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { obterConfiguracaoEmpresa } from "@/lib/actions";
 import OrcamentoAcoes from "./OrcamentoAcoes";
+import ListaCortesButton from "./ListaCortesButton";
 import type { ResultadoCalculo } from "@/lib/calculo";
 
 export default async function OrcamentoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -52,6 +53,7 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
             quantidade: i.quantidade,
             corPerfil: i.corPerfil,
             tipoVidro: i.tipoVidro,
+            materiais: (JSON.parse(i.calculoJson) as ResultadoCalculo).itens.map((material) => `${material.descricao}: ${material.quantidade} ${material.unidade}`).join("; "),
             valorItem: i.valorItem,
           }))}
         />
@@ -70,12 +72,14 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
               <th>Barras</th>
               <th>Vidro (m²)</th>
               <th>Valor</th>
+              <th>Produção</th>
             </tr>
           </thead>
           <tbody>
             {orcamento.itens.map((i) => {
               const calc: ResultadoCalculo = JSON.parse(i.calculoJson);
               return (
+                <>
                 <tr key={i.id} className="border-b last:border-0 align-top">
                   <td className="py-2">{i.descricao ?? i.tipoEsquadria.nome}</td>
                   <td>{i.largura}×{i.altura}cm</td>
@@ -85,7 +89,23 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
                   <td>{calc.barrasPerfilNecessarias}</td>
                   <td>{calc.vidroM2Total.toFixed(2)}</td>
                   <td className="font-semibold">R$ {i.valorItem.toFixed(2)}</td>
+                  <td><ListaCortesButton cortes={calc.cortes ?? []} /></td>
                 </tr>
+                <tr key={`${i.id}-materiais`} className="border-b bg-slate-50/60">
+                  <td colSpan={8} className="px-2 py-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Detalhamento de materiais</div>
+                    <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
+                      {calc.itens.map((material) => (
+                        <div key={material.descricao} className="flex justify-between gap-3 text-sm">
+                          <span>{material.descricao}</span>
+                          <span className="font-medium whitespace-nowrap">{material.quantidade} {material.unidade} · R$ {material.precoTotal.toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {calc.metrosPerfilReaproveitadosEstoque > 0 && <p className="mt-2 text-xs text-amber-700">Reaproveitamento: {calc.metrosPerfilReaproveitadosEstoque.toFixed(2)} m de perfil do estoque.</p>}
+                  </td>
+                </tr>
+                </>
               );
             })}
           </tbody>

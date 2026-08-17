@@ -7,7 +7,9 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const materiais = [
-    { nome: "Perfil de alumínio (metro)", categoria: "PERFIL", unidade: "BARRA", comprimentoBarra: 6, precoUnitario: 18.5 },
+    { nome: "Linha convencional", categoria: "PERFIL", unidade: "BARRA", comprimentoBarra: 6, precoUnitario: 18.5 },
+    { nome: "Linha Suprema", categoria: "PERFIL", unidade: "BARRA", comprimentoBarra: 6, precoUnitario: 32.5 },
+    { nome: "Perfil T para emenda de pergolado", categoria: "PERFIL_T", unidade: "BARRA", comprimentoBarra: 6, precoUnitario: 24 },
     { nome: "Vidro temperado incolor 8mm (m²)", categoria: "VIDRO", unidade: "M2", precoUnitario: 210 },
     { nome: "Vidro temperado incolor 10mm (m²)", categoria: "VIDRO", unidade: "M2", precoUnitario: 260 },
     { nome: "Rodízio simples", categoria: "ACESSORIO", unidade: "PECA", precoUnitario: 6.5 },
@@ -34,6 +36,9 @@ async function main() {
     { nome: "Porta de Correr 4 Folhas", categoria: "PORTA_CORRER", numFolhas: 4, formulaKey: "PORTA_CORRER" },
     { nome: "Porta de Giro 1 Folha", categoria: "PORTA_GIRO", numFolhas: 1, formulaKey: "PORTA_GIRO" },
     { nome: "Porta de Giro 2 Folhas", categoria: "PORTA_GIRO", numFolhas: 2, formulaKey: "PORTA_GIRO" },
+    { nome: "Cobertura de vidro para pergolado — 2 placas", categoria: "COBERTURA_PERGOLADO", numFolhas: 2, formulaKey: "COBERTURA_PERGOLADO" },
+    { nome: "Cobertura de vidro para pergolado — 3 placas", categoria: "COBERTURA_PERGOLADO", numFolhas: 3, formulaKey: "COBERTURA_PERGOLADO" },
+    { nome: "Cobertura de vidro para pergolado — 4 placas", categoria: "COBERTURA_PERGOLADO", numFolhas: 4, formulaKey: "COBERTURA_PERGOLADO" },
   ];
 
   for (const t of tipos) {

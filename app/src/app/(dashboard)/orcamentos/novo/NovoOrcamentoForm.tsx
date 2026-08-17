@@ -18,6 +18,7 @@ interface ItemForm {
   alturaCm: number;
   quantidade: number;
   corPerfil: string;
+  perfilMaterialId?: number;
   tipoVidro: string;
   precoM2Vidro: number;
   resultado: ResultadoCalculo;
@@ -33,11 +34,13 @@ export interface OrcamentoParaEditar {
   validadeDias: number;
   itens: ItemOrcamentoInput[];
 }
+interface Perfil { id: number; nome: string; precoUnitario: number; comprimentoBarraM: number }
 
 export default function NovoOrcamentoForm({
   clientes,
   tipos,
   vidros,
+  perfis,
   precos,
   comprimentoBarraM,
   sobrasDisponiveisCm,
@@ -46,6 +49,7 @@ export default function NovoOrcamentoForm({
   clientes: Cliente[];
   tipos: TipoEsquadria[];
   vidros: Vidro[];
+  perfis: Perfil[];
   precos: PrecosMateriais;
   comprimentoBarraM: number;
   sobrasDisponiveisCm: number[];
@@ -65,6 +69,7 @@ export default function NovoOrcamentoForm({
     if (!edicao) return [];
     return edicao.itens.map((i) => {
       const tipo = tipos.find((t) => t.id === i.tipoEsquadriaId);
+      const perfil = perfis.find((p) => p.id === i.perfilMaterialId) ?? perfis[0];
       const resultado = calcularOrcamentoItem({
         categoria: tipo?.categoria ?? "JANELA_CORRER",
         numFolhas: tipo?.numFolhas ?? 2,
@@ -73,8 +78,9 @@ export default function NovoOrcamentoForm({
         quantidade: i.quantidade,
         parametrosJson: tipo?.parametros,
         precoM2Vidro: i.precoM2Vidro,
-        precos,
-        comprimentoBarraM,
+        perfilNome: perfil?.nome,
+        precos: perfil ? { ...precos, perfilMetro: perfil.precoUnitario } : precos,
+        comprimentoBarraM: perfil?.comprimentoBarraM ?? comprimentoBarraM,
         sobrasPerfilDisponiveisM: [],
       });
       return {
@@ -85,6 +91,7 @@ export default function NovoOrcamentoForm({
         alturaCm: i.alturaCm,
         quantidade: i.quantidade,
         corPerfil: i.corPerfil,
+        perfilMaterialId: i.perfilMaterialId,
         tipoVidro: i.tipoVidro,
         precoM2Vidro: i.precoM2Vidro,
         resultado,
@@ -99,13 +106,15 @@ export default function NovoOrcamentoForm({
   const [quantidade, setQuantidade] = useState(1);
   const [corPerfil, setCorPerfil] = useState("Branco");
   const [tipoVidro, setTipoVidro] = useState(vidros[0]?.nome ?? "");
+  const [perfilMaterialId, setPerfilMaterialId] = useState<number | "">(perfis[0]?.id ?? "");
 
   const sobrasEmMetros = useMemo(() => sobrasDisponiveisCm.map((c) => c / 100), [sobrasDisponiveisCm]);
 
   function adicionarItem() {
     const tipo = tipos.find((t) => t.id === tipoEsquadriaId);
     const vidro = vidros.find((v) => v.nome === tipoVidro);
-    if (!tipo || !vidro) return;
+    const perfil = perfis.find((p) => p.id === perfilMaterialId);
+    if (!tipo || !vidro || !perfil) return;
 
     const resultado = calcularOrcamentoItem({
       categoria: tipo.categoria,
@@ -115,8 +124,9 @@ export default function NovoOrcamentoForm({
       quantidade,
       parametrosJson: tipo.parametros,
       precoM2Vidro: vidro.precoUnitario,
-      precos,
-      comprimentoBarraM,
+      perfilNome: perfil.nome,
+      precos: { ...precos, perfilMetro: perfil.precoUnitario },
+      comprimentoBarraM: perfil.comprimentoBarraM,
       sobrasPerfilDisponiveisM: sobrasEmMetros,
     });
 
@@ -130,6 +140,7 @@ export default function NovoOrcamentoForm({
         alturaCm,
         quantidade,
         corPerfil,
+              perfilMaterialId: perfil.id,
         tipoVidro,
         precoM2Vidro: vidro.precoUnitario,
         resultado,
@@ -171,6 +182,7 @@ export default function NovoOrcamentoForm({
             corPerfil: i.corPerfil,
             tipoVidro: i.tipoVidro,
             precoM2Vidro: i.precoM2Vidro,
+            perfilMaterialId: i.perfilMaterialId,
           })),
         };
         const resp = edicao ? await atualizarOrcamento(edicao.id, payload) : await criarOrcamento(payload);
@@ -234,7 +246,7 @@ export default function NovoOrcamentoForm({
             <input type="number" min={1} value={alturaCm} onChange={(e) => setAlturaCm(Number(e.target.value))} className="ios-input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Quantidade
+            {tipos.find((t) => t.id === tipoEsquadriaId)?.categoria === "COBERTURA_PERGOLADO" ? "Quantidade de placas de vidro" : "Quantidade"}
             <input type="number" min={1} value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))} className="ios-input" />
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -246,6 +258,14 @@ export default function NovoOrcamentoForm({
             <select value={tipoVidro} onChange={(e) => setTipoVidro(e.target.value)} className="ios-input">
               {vidros.map((v) => (
                 <option key={v.nome} value={v.nome}>{v.nome} (R$ {v.precoUnitario.toFixed(2)}/m²)</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-sm md:col-span-2">
+            Linha do perfil
+            <select value={perfilMaterialId} onChange={(e) => setPerfilMaterialId(Number(e.target.value))} className="ios-input">
+              {perfis.map((p) => (
+                <option key={p.id} value={p.id}>{p.nome} — R$ {p.precoUnitario.toFixed(2)}/m · barra {p.comprimentoBarraM}m</option>
               ))}
             </select>
           </label>
@@ -277,6 +297,7 @@ export default function NovoOrcamentoForm({
             </thead>
             <tbody>
               {itens.map((i) => (
+                <>
                 <tr key={i.chave} className="border-b last:border-0">
                   <td className="py-2">{i.descricao}</td>
                   <td>{i.larguraCm}×{i.alturaCm}cm</td>
@@ -288,6 +309,11 @@ export default function NovoOrcamentoForm({
                     <button onClick={() => removerItem(i.chave)} className="ios-btn ios-btn-danger !py-1 !px-2.5 text-xs">remover</button>
                   </td>
                 </tr>
+                <tr key={`${i.chave}-materiais`} className="border-b text-xs text-slate-500">
+                  <td colSpan={7} className="pb-2">{i.resultado.itens.map((material) => `${material.descricao}: ${material.quantidade} ${material.unidade}`).join(" · ")}</td>
+                  <td />
+                </tr>
+                </>
               ))}
             </tbody>
           </table>

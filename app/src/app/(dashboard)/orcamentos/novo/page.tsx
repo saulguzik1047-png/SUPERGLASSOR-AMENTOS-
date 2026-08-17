@@ -5,7 +5,7 @@ import NovoOrcamentoForm from "./NovoOrcamentoForm";
 export const dynamic = "force-dynamic";
 
 export default async function NovoOrcamentoPage() {
-  const { clientes, tipos, vidros, precos, comprimentoBarraM, sobrasDisponiveisCm } = await carregarDadosFormularioOrcamento();
+  const { clientes, tipos, vidros, perfis, precos, comprimentoBarraM, sobrasDisponiveisCm } = await carregarDadosFormularioOrcamento();
 
   if (clientes.length === 0) {
     return (
@@ -23,6 +23,7 @@ export default async function NovoOrcamentoPage() {
         clientes={clientes}
         tipos={tipos}
         vidros={vidros}
+        perfis={perfis}
         precos={precos}
         comprimentoBarraM={comprimentoBarraM}
         sobrasDisponiveisCm={sobrasDisponiveisCm}

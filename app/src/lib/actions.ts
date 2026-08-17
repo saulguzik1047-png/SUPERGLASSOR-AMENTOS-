@@ -20,13 +20,15 @@ export async function excluirCliente(id: number) {
   revalidatePath("/clientes");
 }
 
-async function montarPrecosMateriais(): Promise<{ precos: PrecosMateriais; comprimentoBarraM: number; precoM2VidroPorNome: Record<string, number> }> {
+async function montarPrecosMateriais(perfilMaterialId?: number): Promise<{ precos: PrecosMateriais; comprimentoBarraM: number; perfilNome: string; perfilTNome: string; perfilMaterialId?: number }> {
   const materiais = await prisma.material.findMany({ where: { ativo: true } });
   const porNome = (nome: string, padrao: number) => materiais.find((m) => m.nome === nome)?.precoUnitario ?? padrao;
-  const perfil = materiais.find((m) => m.categoria === "PERFIL");
+  const perfil = materiais.find((m) => m.categoria === "PERFIL" && m.id === perfilMaterialId) ?? materiais.find((m) => m.categoria === "PERFIL");
+  const perfilT = materiais.find((m) => m.categoria === "PERFIL_T");
 
   const precos: PrecosMateriais = {
     perfilMetro: perfil?.precoUnitario ?? 18.5,
+    perfilTMetro: perfilT?.precoUnitario ?? 24,
     rodizio: porNome("Rodízio simples", 6.5),
     dobradica: porNome("Dobradiça de aço", 9),
     fechoTrava: porNome("Fecho/trava", 14),
@@ -42,7 +44,7 @@ async function montarPrecosMateriais(): Promise<{ precos: PrecosMateriais; compr
     precoM2VidroPorNome[m.nome] = m.precoUnitario;
   }
 
-  return { precos, comprimentoBarraM: perfil?.comprimentoBarra ?? 6, precoM2VidroPorNome };
+  return { precos, comprimentoBarraM: perfil?.comprimentoBarra ?? 6, perfilNome: perfil?.nome ?? "Perfil de alumínio", perfilTNome: perfilT?.nome ?? "Perfil T para emenda", perfilMaterialId: perfil?.id };
 }
 
 export interface ItemOrcamentoInput {
@@ -54,6 +56,7 @@ export interface ItemOrcamentoInput {
   corPerfil: string;
   tipoVidro: string;
   precoM2Vidro: number;
+  perfilMaterialId?: number;
 }
 
 export interface CriarOrcamentoInput {
@@ -73,7 +76,6 @@ type SobraDb = Awaited<ReturnType<typeof prisma.estoqueSobra.findMany>>;
 async function calcularItensEEstoque(itensInput: ItemOrcamentoInput[]) {
   if (!itensInput.length) throw new Error("Adicione ao menos um item ao orçamento.");
 
-  const { precos, comprimentoBarraM } = await montarPrecosMateriais();
   const tipos = await prisma.tipoEsquadria.findMany({ where: { id: { in: itensInput.map((i) => i.tipoEsquadriaId) } } });
   const tiposPorId = new Map(tipos.map((t) => [t.id, t]));
 
@@ -81,13 +83,14 @@ async function calcularItensEEstoque(itensInput: ItemOrcamentoInput[]) {
   const sobrasPool: SobraPool = sobrasDb.map((s) => ({ id: s.id, restanteM: s.medida1 / 100 }));
 
   let subtotalMateriais = 0;
-  const itensParaCriar: { tipoEsquadriaId: number; descricao: string | null; largura: number; altura: number; quantidade: number; corPerfil: string; tipoVidro: string; precoM2Vidro: number; calculoJson: string; valorItem: number }[] = [];
+  const itensParaCriar: { tipoEsquadriaId: number; descricao: string | null; largura: number; altura: number; quantidade: number; corPerfil: string; tipoVidro: string; perfilMaterialId?: number; perfilNome?: string; precoPerfilMetro?: number; precoM2Vidro: number; calculoJson: string; valorItem: number }[] = [];
   const alertasSobra: string[] = [];
   const novasSobras: { medida1: number }[] = [];
 
   for (const item of itensInput) {
     const tipo = tiposPorId.get(item.tipoEsquadriaId);
     if (!tipo) throw new Error("Tipo de esquadria inválido.");
+    const { precos, comprimentoBarraM, perfilNome, perfilTNome, perfilMaterialId } = await montarPrecosMateriais(item.perfilMaterialId);
 
     const disponiveisAgora = sobrasPool.filter((s) => s.restanteM > 0).map((s) => s.restanteM);
 
@@ -99,6 +102,8 @@ async function calcularItensEEstoque(itensInput: ItemOrcamentoInput[]) {
       quantidade: item.quantidade,
       parametrosJson: tipo.parametros,
       precoM2Vidro: item.precoM2Vidro,
+      perfilNome,
+      perfilTNome,
       precos,
       comprimentoBarraM,
       sobrasPerfilDisponiveisM: disponiveisAgora,
@@ -130,6 +135,9 @@ async function calcularItensEEstoque(itensInput: ItemOrcamentoInput[]) {
       corPerfil: item.corPerfil,
       tipoVidro: item.tipoVidro,
       precoM2Vidro: item.precoM2Vidro,
+      perfilMaterialId,
+      perfilNome,
+      precoPerfilMetro: precos.perfilMetro,
       calculoJson: JSON.stringify(resultado),
       valorItem: resultado.totalMateriais,
     });

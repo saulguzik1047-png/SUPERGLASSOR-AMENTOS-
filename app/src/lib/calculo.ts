@@ -105,7 +105,8 @@ export function mesclarParametros(categoria: string, parametrosJson: string | nu
 }
 
 export interface PrecosMateriais {
-  perfilMetro: number; // preço médio do metro de perfil (marco+folha)
+  perfilMetro: number; // preço por metro do perfil selecionado
+  perfilTMetro: number;
   rodizio: number;
   dobradica: number;
   fechoTrava: number;
@@ -124,6 +125,8 @@ export interface CalculoInput {
   quantidade: number;
   parametrosJson?: string | null;
   precoM2Vidro: number;
+  perfilNome?: string;
+  perfilTNome?: string;
   precos: PrecosMateriais;
   comprimentoBarraM?: number; // padrão 6m
   sobrasPerfilDisponiveisM?: number[]; // comprimentos (m) de retalhos de perfil em estoque, do mais comprido pro mais curto
@@ -137,6 +140,14 @@ export interface ItemCalculado {
   precoTotal: number;
 }
 
+export interface CortePerfil {
+  perfil: string;
+  descricao: string;
+  quantidade: number;
+  comprimentoCm: number;
+  observacao: string;
+}
+
 export interface SobraGerada {
   tipo: "PERFIL" | "VIDRO";
   descricaoMaterial: string;
@@ -146,6 +157,7 @@ export interface SobraGerada {
 
 export interface ResultadoCalculo {
   itens: ItemCalculado[];
+  cortes: CortePerfil[];
   sobras: SobraGerada[];
   vidroM2Total: number;
   metrosPerfilTotal: number;
@@ -157,6 +169,25 @@ export interface ResultadoCalculo {
 export function calcularOrcamentoItem(input: CalculoInput): ResultadoCalculo {
   const p = mesclarParametros(input.categoria, input.parametrosJson);
   const comprimentoBarraM = input.comprimentoBarraM ?? 6;
+
+  if (input.categoria === "COBERTURA_PERGOLADO") {
+    const vidroM2Total = (input.larguraCm / 100) * (input.alturaCm / 100) * input.quantidade;
+    const emendas = Math.max(input.numFolhas - 1, 0) * input.quantidade;
+    const descontoEmendaCm = 1;
+    const comprimentoCorteT = Math.max(input.alturaCm - descontoEmendaCm, 0);
+    const metrosPerfilT = (comprimentoCorteT / 100) * emendas;
+    const barrasPerfilT = Math.ceil(metrosPerfilT / comprimentoBarraM);
+    const itens: ItemCalculado[] = [
+      { descricao: "Vidro para cobertura", quantidade: Number(vidroM2Total.toFixed(3)), unidade: "m²", precoUnitario: input.precoM2Vidro, precoTotal: vidroM2Total * input.precoM2Vidro },
+    ];
+    if (metrosPerfilT > 0) {
+      itens.push({ descricao: `${input.perfilTNome ?? "Perfil T para emenda"} (barras de ${comprimentoBarraM}m)`, quantidade: barrasPerfilT, unidade: "barra", precoUnitario: input.precos.perfilTMetro * comprimentoBarraM, precoTotal: barrasPerfilT * input.precos.perfilTMetro * comprimentoBarraM });
+    }
+    const tubosSilicone = p.tubosSiliconePorEsquadria * input.quantidade;
+    itens.push({ descricao: "Tubo de silicone", quantidade: tubosSilicone, unidade: "un", precoUnitario: input.precos.tuboSilicone, precoTotal: tubosSilicone * input.precos.tuboSilicone });
+    return { itens, cortes: metrosPerfilT > 0 ? [{ perfil: input.perfilTNome ?? "Perfil T para emenda", descricao: "Perfil T das emendas entre placas", quantidade: emendas, comprimentoCm: Number(comprimentoCorteT.toFixed(1)), observacao: `Desconto de ${descontoEmendaCm} cm aplicado nas extremidades` }] : [], sobras: [], vidroM2Total, metrosPerfilTotal: metrosPerfilT, barrasPerfilNecessarias: barrasPerfilT, metrosPerfilReaproveitadosEstoque: 0, totalMateriais: itens.reduce((total, item) => total + item.precoTotal, 0) };
+  }
+
   const folhasMoveis = Math.min(p.folhasMoveis, input.numFolhas);
 
   const larguraFolhaCm = input.numFolhas > 0
@@ -199,9 +230,15 @@ export function calcularOrcamentoItem(input: CalculoInput): ResultadoCalculo {
   const fitaEscovaM = perimetroFolhasTotalM * input.quantidade;
 
   const itens: ItemCalculado[] = [];
+  const cortes: CortePerfil[] = [
+    { perfil: input.perfilNome ?? "Perfil de alumínio", descricao: "Marco horizontal", quantidade: 2 * input.quantidade, comprimentoCm: Number(input.larguraCm.toFixed(1)), observacao: "Corte no vão do marco" },
+    { perfil: input.perfilNome ?? "Perfil de alumínio", descricao: "Marco vertical", quantidade: 2 * input.quantidade, comprimentoCm: Number(input.alturaCm.toFixed(1)), observacao: "Corte no vão do marco" },
+    { perfil: input.perfilNome ?? "Perfil de alumínio", descricao: "Folha horizontal", quantidade: 2 * input.numFolhas * input.quantidade, comprimentoCm: Number(larguraFolhaCm.toFixed(1)), observacao: `Largura dividida em ${input.numFolhas} folhas + ${p.descontoFolhaLarguraCm} cm de sobreposição` },
+    { perfil: input.perfilNome ?? "Perfil de alumínio", descricao: "Folha vertical", quantidade: 2 * input.numFolhas * input.quantidade, comprimentoCm: Number(alturaFolhaCm.toFixed(1)), observacao: `Altura com desconto de encaixe de ${p.descontoFolhaAlturaCm} cm` },
+  ];
 
   itens.push({
-    descricao: `Perfil de alumínio (barras de ${comprimentoBarraM}m)`,
+    descricao: `${input.perfilNome ?? "Perfil de alumínio"} (barras de ${comprimentoBarraM}m)`,
     quantidade: barrasNecessarias,
     unidade: "barra",
     precoUnitario: input.precos.perfilMetro * comprimentoBarraM,
@@ -255,6 +292,7 @@ export function calcularOrcamentoItem(input: CalculoInput): ResultadoCalculo {
 
   return {
     itens,
+    cortes,
     sobras,
     vidroM2Total,
     metrosPerfilTotal,

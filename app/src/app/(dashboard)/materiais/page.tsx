@@ -7,11 +7,12 @@ const categoriaLabel: Record<string, string> = {
   PERFIL: "Perfil de alumínio",
   VIDRO: "Vidro",
   ACESSORIO: "Acessórios",
+  PERFIL_T: "Perfil T para emendas",
 };
 
 export default async function MateriaisPage() {
   const materiais = await prisma.material.findMany({ where: { ativo: true }, orderBy: [{ categoria: "asc" }, { nome: "asc" }] });
-  const grupos = ["PERFIL", "VIDRO", "ACESSORIO"].map((categoria) => ({
+  const grupos = ["PERFIL", "PERFIL_T", "VIDRO", "ACESSORIO"].map((categoria) => ({
     categoria,
     itens: materiais.filter((m) => m.categoria === categoria),
   }));

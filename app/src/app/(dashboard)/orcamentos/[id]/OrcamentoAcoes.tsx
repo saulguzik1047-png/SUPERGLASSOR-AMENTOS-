@@ -13,6 +13,7 @@ interface ItemPdf {
   quantidade: number;
   corPerfil: string;
   tipoVidro: string;
+  materiais: string;
   valorItem: number;
 }
 
@@ -96,13 +97,14 @@ export default function OrcamentoAcoes({
 
     autoTable(doc, {
       startY: y + 4,
-      head: [["Item", "Medidas (cm)", "Qtd", "Cor", "Vidro", "Valor (R$)"]],
+      head: [["Item", "Medidas (cm)", "Qtd", "Cor", "Vidro", "Materiais", "Valor (R$)"]],
       body: itens.map((i) => [
         i.descricao,
         `${i.largura}x${i.altura}`,
         String(i.quantidade),
         i.corPerfil,
         i.tipoVidro,
+        i.materiais,
         i.valorItem.toFixed(2),
       ]),
     });

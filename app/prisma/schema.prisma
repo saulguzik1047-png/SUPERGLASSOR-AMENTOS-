@@ -74,6 +74,9 @@ model ItemOrcamento {
   quantidade          Int           @default(1)
   corPerfil           String        @default("Branco")
   tipoVidro           String        @default("Temperado Incolor")
+  perfilMaterialId    Int?
+  perfilNome          String?
+  precoPerfilMetro    Float?
   precoM2Vidro        Float
   usarSobraEstoqueId  Int?
   calculoJson         String // detalhamento: barras, rodizios, fitas, acessorios, vidro, sobras geradas
