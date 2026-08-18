@@ -3,7 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  color-scheme: light;
+  color-scheme: only light;
 }
 
 @theme inline {
@@ -15,15 +15,15 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: only light;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
+  color: #171717;
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100%;
-  color-scheme: light;
+  color-scheme: only light;
 }
 
 html.app-bg body {
@@ -141,7 +141,7 @@ html.app-bg body {
 }
 
 /* Garante texto visível em selects e options nativos em qualquer modo */
-select, option, textarea, input {
+select, option, textarea, input, button {
   color: #0f172a;
 }
 
