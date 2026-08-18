@@ -132,10 +132,16 @@ html.app-bg body {
   border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 0.85rem;
   padding: 0.6rem 0.9rem;
+  color: #0f172a;
 }
 .ios-input:focus {
   outline: none;
   border-color: rgba(37, 99, 235, 0.5);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* Garante texto visível em selects e options nativos em qualquer modo */
+select, option, textarea, input {
+  color: #0f172a;
 }
 
